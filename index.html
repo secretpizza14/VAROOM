@@ -44,19 +44,36 @@
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
+        const crashSound = new Audio("dragon-studio-car-crash-sound-376882.mp3");
+        const engineSound = new Audio("dragon-studio-car-engine-372477.mp3");
+        const bgMusic = new Audio("hauntsync-lazer-grid-80s-synthwave-walking-track-227155.mp3");
+        bgMusic.loop = true;
+        bgMusic.volume = 0.3;
+        const song2Music = new Audio("mondamusic-synthwave-retro-80s-491697.mp3");
+        song2Music.loop = true;
+
+        let selectedSong = localStorage.getItem("varoomSong") || "synth";
+        let song2Unlocked = localStorage.getItem("varoomSong2Unlocked") === "true";
+        let musicVolume = parseInt(localStorage.getItem("varoomVolume")) || 30;
+        let vhsTapes = [];
+        let vhsTimer = 0;
+        let unlockFlash = 0;
+
         let gameStarted = false;
         let loadProgress = 0;
         let wheelAngle = 0;
         let readyToPlay = false;
         let lastT = 0;
+        let introTimer = 0;
+        const introDuration = 90;
 
         let score = 0;
         let highScore = parseInt(localStorage.getItem("varoomHighScore")) || 0;
         let paused = false;
         let gameOver = false;
         
-        let baseGameSpeed = 3.2;
-        let gameSpeed = 3.2;
+        let baseGameSpeed = 3.5;
+        let gameSpeed = 3.5;
 
         let lastPTime = 0;
         let lastDownTime = 0;
@@ -88,16 +105,19 @@
             y: 400, 
             width: 30, 
             height: 50, 
-            speed: 5.5
+            speed: 5.5,
+            vx: 0
         };
 
         let obstacles = [];
         let scenery = [];
         let debris = [];
         let snow = [];
+        let skidMarks = [];
         let spawnTimer = 0;
         let sceneryTimer = 0;
         let snowTimer = 0;
+        let skidTimer = 0;
 
         const carColors = ["#00ffff", "#ffff33", "#ff00ff", "#00ff66", "#ff9900"];
         const semiCabColors = ["#cc0000", "#003366", "#20b2aa"]; 
@@ -122,9 +142,11 @@
 
             if (!gameStarted && readyToPlay && (e.code === "Space" || e.code === "Enter")) {
                 gameStarted = true;
+                engineSound.currentTime = 0;
+                engineSound.play();
             }
 
-            if (gameStarted && !paused && !gameOver) {
+            if (gameStarted && !gameOver) {
                 if (e.key.toLowerCase() === 'l' || e.key.toLowerCase() === 'd') {
                     devKeyBuffer += e.key.toLowerCase();
                     if (devKeyBuffer.length > 2) {
@@ -161,6 +183,8 @@
         window.addEventListener("click", (e) => {
             if (!gameStarted && readyToPlay) {
                 gameStarted = true;
+                engineSound.currentTime = 0;
+                engineSound.play();
                 return;
             }
 
@@ -200,10 +224,27 @@
                         localStorage.setItem("varoomMode", selectedGameMode);
                     }
                 }
+
+                // Music sidebar (y: 345 to 495)
+                if (mouseY >= 345 && mouseY <= 495 && mouseX >= 373 && mouseX <= 445) {
+                    if (mouseY >= 366 && mouseY <= 398) {
+                        selectedSong = "synth";
+                        localStorage.setItem("varoomSong", selectedSong);
+                    } else if (mouseY >= 402 && mouseY <= 434 && song2Unlocked) {
+                        selectedSong = "retro";
+                        localStorage.setItem("varoomSong", selectedSong);
+                    } else if (mouseY >= 456 && mouseY <= 466) {
+                        let vol = Math.round(((mouseX - 377) / 64) * 100);
+                        musicVolume = Math.max(0, Math.min(100, vol));
+                        localStorage.setItem("varoomVolume", musicVolume);
+                    }
+                }
             }
         });
 
         function triggerCrashExplosion() {
+            crashSound.currentTime = 0;
+            crashSound.play();
             debris = [];
             let currentSkin = carSkins[selectedCarSkin];
             for (let i = 0; i < 20; i++) {
@@ -221,17 +262,24 @@
 
         function resetGame() {
             score = 0;
-            baseGameSpeed = 3.2;
-            gameSpeed = 3.2;
+            engineSound.currentTime = 0;
+            engineSound.play();
+            baseGameSpeed = 3.5;
+            gameSpeed = 3.5;
             obstacles = [];
             scenery = [];
             debris = [];
             snow = [];
+            skidMarks = [];
+            vhsTapes = [];
             copCars = [];
             spawnTimer = 0;
             sceneryTimer = 0;
             snowTimer = 0;
+            skidTimer = 0;
+            vhsTimer = 0;
             player.x = 220;
+            player.vx = 0;
             paused = false;
             gameOver = false;
             devKeyBuffer = "";
@@ -274,11 +322,37 @@
             ctx.restore();
         }
 
+        function playBg() {
+            let useSong2 = selectedSong === "retro" && song2Unlocked;
+            bgMusic.volume = musicVolume / 100;
+            song2Music.volume = musicVolume / 100;
+            if (useSong2) {
+                bgMusic.pause();
+                if (song2Music.paused) song2Music.play();
+            } else {
+                song2Music.pause();
+                if (bgMusic.paused) bgMusic.play();
+            }
+        }
+
+        function pauseBg() {
+            bgMusic.pause();
+            song2Music.pause();
+        }
+
         function update(delta) {
             let dt = delta * 60;
+            if (gameStarted && !paused && !gameOver) {
+                playBg();
+            } else {
+                pauseBg();
+            }
+            let season = score >= 1000 && score < 2000 ? "winter" : "normal";
             if (!gameStarted) {
                 wheelAngle += 0.12 * dt;
-                if (!readyToPlay) {
+                if (introTimer < introDuration) {
+                    introTimer += dt;
+                } else if (!readyToPlay) {
                     loadProgress += 1.2 * dt;
                     if (loadProgress >= 100) {
                         loadProgress = 100;
@@ -323,8 +397,36 @@
             }
             gameSpeed += (targetSpeed - gameSpeed) * (1 - Math.pow(0.8, dt));
 
-            if (keys.ArrowLeft && player.x > road.x + 5) player.x -= player.speed * dt;
-            if (keys.ArrowRight && player.x < road.x + road.width - player.width - 5) player.x += player.speed * dt;
+            let grip = season === "winter" ? 1.0 : 0.15;
+            let targetVx = 0;
+            if (keys.ArrowLeft && player.x > road.x + 5) targetVx = -player.speed;
+            if (keys.ArrowRight && player.x < road.x + road.width - player.width - 5) targetVx = player.speed;
+            player.vx += (targetVx - player.vx) * grip;
+            player.x += player.vx * dt;
+
+            if (player.x < road.x + 5) {
+                player.x = road.x + 5;
+                player.vx = 0;
+            }
+            if (player.x > road.x + road.width - player.width - 5) {
+                player.x = road.x + road.width - player.width - 5;
+                player.vx = 0;
+            }
+
+            if (Math.abs(player.vx) > 1.5 && gameSpeed > 0.5) {
+                skidTimer += dt;
+                if (skidTimer > 3) {
+                    skidMarks.push({
+                        y: player.y + player.height - 4,
+                        left: player.x + 4,
+                        right: player.x + player.width - 7,
+                        life: 180
+                    });
+                    skidTimer = 0;
+                }
+            } else {
+                skidTimer = 0;
+            }
 
             spawnTimer += dt;
             let dynamicSpawnRate = 90;
@@ -335,7 +437,7 @@
             }
 
             if (spawnTimer > dynamicSpawnRate) {
-                let isSemi = (selectedGameMode === "traffic" && trafficPhase === "jam") ? (Math.random() < 0.35) : false;
+                let isSemi = (selectedGameMode === "traffic" && trafficPhase === "jam") ? (Math.random() < 0.35) : (Math.random() < 0.10);
                 let obsWidth = isSemi ? 40 : 30;
                 let obsHeight = isSemi ? 115 : 50;
                 
@@ -447,7 +549,14 @@
                 }
             }
 
-            if (score >= 1000) {
+            for (let i = skidMarks.length - 1; i >= 0; i--) {
+                let mark = skidMarks[i];
+                mark.y += gameSpeed * dt;
+                mark.life -= dt;
+                if (mark.life <= 0 || mark.y > canvas.height + 10) skidMarks.splice(i, 1);
+            }
+
+            if (season === "winter") {
                 snowTimer += dt;
                 if (snowTimer > 8) {
                     snow.push({
@@ -491,21 +600,58 @@
                 }
             }
 
+            if (score >= 500 && !song2Unlocked) {
+                vhsTimer += dt;
+                if (vhsTimer > 400) {
+                    vhsTapes.push({ x: road.x + Math.random() * (road.width - 16), y: -12 });
+                    vhsTimer = 0;
+                }
+            }
+
+            for (let i = vhsTapes.length - 1; i >= 0; i--) {
+                let tape = vhsTapes[i];
+                tape.y += gameSpeed * dt;
+
+                if (
+                    player.x < tape.x + 16 &&
+                    player.x + player.width > tape.x &&
+                    player.y < tape.y + 11 &&
+                    player.y + player.height > tape.y
+                ) {
+                    song2Unlocked = true;
+                    localStorage.setItem("varoomSong2Unlocked", "true");
+                    selectedSong = "retro";
+                    localStorage.setItem("varoomSong", "retro");
+                    vhsTapes.splice(i, 1);
+                    unlockFlash = 90;
+                    playBg();
+                    continue;
+                }
+
+                if (tape.y > canvas.height + 20) {
+                    vhsTapes.splice(i, 1);
+                }
+            }
+
+            if (unlockFlash > 0) unlockFlash -= dt;
+
             let blockIndex = Math.floor(score / 500);
             if (blockIndex % 2 === 1) {
-                baseGameSpeed = 4.2 + Math.floor((score % 500) / 70);
+                baseGameSpeed = 4.5 + Math.floor((score % 500) / 70);
             } else {
-                baseGameSpeed = 3.2 + Math.floor((score % 500) / 70);
+                baseGameSpeed = 3.5 + Math.floor((score % 500) / 70);
             }
         }
 
         function draw() {
             let cycleIndex = Math.floor(score / 500);
             let isNight = (cycleIndex % 2 === 1);
-            let isWinter = score >= 1000;
+            let isWinter = score >= 1000 && score < 2000;
             let currentSkin = carSkins[selectedCarSkin];
 
-            ctx.fillStyle = isNight ? (isWinter ? "#16222e" : "#0d2b0d") : (isWinter ? "#a5c9d6" : "#228b22");
+            let bgDay = isWinter ? "#a5c9d6" : "#228b22";
+            let bgNight = isWinter ? "#16222e" : "#0d2b0d";
+            ctx.fillStyle = isNight ? bgNight : bgDay;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             ctx.fillStyle = "#111111";
@@ -533,7 +679,9 @@
                 }
             }
 
-            ctx.fillStyle = isNight ? (isWinter ? "#3a4a52" : "#2e2e2e") : (isWinter ? "#98a6ad" : road.color);
+            let roadDay = isWinter ? "#98a6ad" : road.color;
+            let roadNight = isWinter ? "#3a4a52" : "#2e2e2e";
+            ctx.fillStyle = isNight ? roadNight : roadDay;
             ctx.fillRect(road.x, 0, road.width, canvas.height);
 
             ctx.fillStyle = "#ffffff";
@@ -548,6 +696,13 @@
             ctx.lineTo(road.x + road.width / 2, canvas.height);
             ctx.stroke();
             ctx.setLineDash([]);
+
+            for (let mark of skidMarks) {
+                let alpha = Math.max(0, mark.life / 180) * 0.4;
+                ctx.fillStyle = "rgba(0,0,0," + alpha.toFixed(2) + ")";
+                ctx.fillRect(mark.left, mark.y, 3, 5);
+                ctx.fillRect(mark.right, mark.y, 3, 5);
+            }
 
             if (isNight) {
                 ctx.fillStyle = "rgba(255, 255, 150, 0.15)";
@@ -624,6 +779,15 @@
                 }
             }
 
+            for (let tape of vhsTapes) {
+                ctx.fillStyle = "#111111";
+                ctx.fillRect(tape.x, tape.y, 16, 11);
+                ctx.fillStyle = "#dddddd";
+                ctx.fillRect(tape.x + 2, tape.y + 2, 12, 4);
+                ctx.fillStyle = "#ffcc00";
+                ctx.fillRect(tape.x + 5, tape.y + 3, 6, 2);
+            }
+
             for (let flake of snow) {
                 ctx.fillStyle = "#ffffff";
                 ctx.beginPath();
@@ -670,6 +834,16 @@
                 ctx.fillText("EVADE THE COPS!", 15, 228);
             }
 
+            if (unlockFlash > 0) {
+                ctx.fillStyle = "#ffff33";
+                ctx.font = "bold 14px monospace";
+                ctx.textAlign = "center";
+                ctx.fillText("VHS TAPE UNLOCKED!", canvas.width / 2, 95);
+                ctx.font = "bold 10px monospace";
+                ctx.fillText("NEW SONG IN GARAGE", canvas.width / 2, 112);
+                ctx.textAlign = "left";
+            }
+
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 12px monospace";
             ctx.fillText("SCORE:", 15, 270);
@@ -695,20 +869,22 @@
 
                 drawSpinningWheel(canvas.width / 2, canvas.height / 2 - 10, 26, wheelAngle);
 
-                ctx.strokeStyle = "#fff";
-                ctx.lineWidth = 2;
-                ctx.strokeRect(canvas.width / 2 - 100, canvas.height / 2 + 35, 200, 16);
+                if (introTimer >= introDuration) {
+                    ctx.strokeStyle = "#fff";
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(canvas.width / 2 - 100, canvas.height / 2 + 35, 200, 16);
 
-                ctx.fillStyle = "#00ff66";
-                ctx.fillRect(canvas.width / 2 - 98, canvas.height / 2 + 37, (196 * (loadProgress / 100)), 12);
+                    ctx.fillStyle = "#00ff66";
+                    ctx.fillRect(canvas.width / 2 - 98, canvas.height / 2 + 37, (196 * (loadProgress / 100)), 12);
 
-                ctx.fillStyle = "#fff";
-                ctx.font = "bold 12px monospace";
-                if (!readyToPlay) {
-                    ctx.fillText("LOADING " + Math.floor(loadProgress) + "%", canvas.width / 2, canvas.height / 2 + 75);
-                } else {
-                    ctx.fillStyle = "#ffff33";
-                    ctx.fillText("CLICK OR PRESS SPACE TO START", canvas.width / 2, canvas.height / 2 + 75);
+                    ctx.fillStyle = "#fff";
+                    ctx.font = "bold 12px monospace";
+                    if (!readyToPlay) {
+                        ctx.fillText("LOADING " + Math.floor(loadProgress) + "%", canvas.width / 2, canvas.height / 2 + 75);
+                    } else {
+                        ctx.fillStyle = "#ffff33";
+                        ctx.fillText("CLICK OR PRESS SPACE TO START", canvas.width / 2, canvas.height / 2 + 75);
+                    }
                 }
                 ctx.textAlign = "left";
             }
@@ -801,6 +977,47 @@
                     ctx.font = "bold 11px monospace";
                     ctx.fillText(m.label, m.x + m.w / 2, 322);
                 }
+
+                ctx.strokeStyle = "#00ff66";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(373, 345, 72, 150);
+                ctx.fillStyle = "#fff";
+                ctx.font = "bold 10px monospace";
+                ctx.fillText("MUSIC", 409, 360);
+
+                let song1Sel = selectedSong === "synth";
+                ctx.fillStyle = song1Sel ? "#222" : "#161616";
+                ctx.fillRect(375, 366, 68, 32);
+                ctx.strokeStyle = song1Sel ? "#00ff66" : "#555";
+                ctx.lineWidth = song1Sel ? 2 : 1;
+                ctx.strokeRect(375, 366, 68, 32);
+                ctx.fillStyle = song1Sel ? "#00ff66" : "#fff";
+                ctx.font = "bold 9px monospace";
+                ctx.fillText("1. SYNTH", 409, 386);
+
+                let song2Sel = selectedSong === "retro";
+                let s2Locked = !song2Unlocked;
+                ctx.fillStyle = s2Locked ? "#0f0f0f" : (song2Sel ? "#222" : "#161616");
+                ctx.fillRect(375, 402, 68, 32);
+                ctx.strokeStyle = s2Locked ? "#333" : (song2Sel ? "#00ff66" : "#555");
+                ctx.lineWidth = s2Locked ? 1 : (song2Sel ? 2 : 1);
+                ctx.strokeRect(375, 402, 68, 32);
+                ctx.fillStyle = s2Locked ? "#555" : (song2Sel ? "#00ff66" : "#fff");
+                ctx.fillText(s2Locked ? "2. LOCKED" : "2. RETRO", 409, 422);
+
+                ctx.fillStyle = "#fff";
+                ctx.font = "bold 10px monospace";
+                ctx.fillText("VOLUME", 409, 448);
+                ctx.fillStyle = "#444";
+                ctx.fillRect(377, 456, 64, 10);
+                ctx.fillStyle = "#00ff66";
+                ctx.fillRect(377, 456, 64 * (musicVolume / 100), 10);
+                ctx.strokeStyle = "#fff";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(377, 456, 64, 10);
+                ctx.fillStyle = "#fff";
+                ctx.font = "9px monospace";
+                ctx.fillText(musicVolume + "%", 409, 482);
 
                 ctx.fillStyle = "#fff";
                 ctx.font = "11px monospace";
