@@ -51,13 +51,22 @@
         bgMusic.volume = 0.3;
         const song2Music = new Audio("mondamusic-synthwave-retro-80s-491697.mp3");
         song2Music.loop = true;
+        const winterMusic = new Audio("winter-track.mp3");
+        winterMusic.loop = true;
+        const post2000Music = new Audio("post2000-track.mp3");
+        post2000Music.loop = true;
 
         let selectedSong = localStorage.getItem("varoomSong") || "synth";
         let song2Unlocked = localStorage.getItem("varoomSong2Unlocked") === "true";
+        let winterUnlocked = localStorage.getItem("varoomWinterUnlocked") === "true";
+        let post2000Unlocked = localStorage.getItem("varoomPost2000Unlocked") === "true";
         let musicVolume = parseInt(localStorage.getItem("varoomVolume")) || 30;
         let vhsTapes = [];
-        let vhsTimer = 0;
+        let vhsTimers = { retro: 0, winter: 0, post2000: 0 };
         let unlockFlash = 0;
+        let unlockMsg = "";
+
+        const vhsColors = { retro: "#ffcc00", winter: "#00ffff", post2000: "#ff6600" };
 
         let gameStarted = false;
         let loadProgress = 0;
@@ -272,12 +281,12 @@
             snow = [];
             skidMarks = [];
             vhsTapes = [];
+            vhsTimers = { retro: 0, winter: 0, post2000: 0 };
             copCars = [];
             spawnTimer = 0;
             sceneryTimer = 0;
             snowTimer = 0;
             skidTimer = 0;
-            vhsTimer = 0;
             player.x = 220;
             player.vx = 0;
             paused = false;
@@ -323,21 +332,26 @@
         }
 
         function playBg() {
-            let useSong2 = selectedSong === "retro" && song2Unlocked;
-            bgMusic.volume = musicVolume / 100;
-            song2Music.volume = musicVolume / 100;
-            if (useSong2) {
-                bgMusic.pause();
-                if (song2Music.paused) song2Music.play();
+            let season = score >= 1000 && score < 2000 ? "winter" : "normal";
+            let track;
+            if (season === "winter" && winterUnlocked) {
+                track = winterMusic;
+            } else if (score >= 2000 && post2000Unlocked) {
+                track = post2000Music;
+            } else if (selectedSong === "retro" && song2Unlocked) {
+                track = song2Music;
             } else {
-                song2Music.pause();
-                if (bgMusic.paused) bgMusic.play();
+                track = bgMusic;
             }
+            track.volume = musicVolume / 100;
+            for (let m of [bgMusic, song2Music, winterMusic, post2000Music]) {
+                if (m !== track) m.pause();
+            }
+            if (track.paused) track.play();
         }
 
         function pauseBg() {
-            bgMusic.pause();
-            song2Music.pause();
+            for (let m of [bgMusic, song2Music, winterMusic, post2000Music]) m.pause();
         }
 
         function update(delta) {
@@ -577,6 +591,10 @@
                 }
             }
 
+            if (season !== "winter" && snow.length > 0) {
+                snow = [];
+            }
+
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 obstacles[i].y += gameSpeed * dt;
 
@@ -600,11 +618,14 @@
                 }
             }
 
-            if (score >= 500 && !song2Unlocked) {
-                vhsTimer += dt;
-                if (vhsTimer > 400) {
-                    vhsTapes.push({ x: road.x + Math.random() * (road.width - 16), y: -12 });
-                    vhsTimer = 0;
+            for (let t of ["retro", "winter", "post2000"]) {
+                let need = (t === "retro" && !song2Unlocked) || (t === "winter" && !winterUnlocked) || (t === "post2000" && !post2000Unlocked);
+                if (need) {
+                    vhsTimers[t] += dt;
+                    if (vhsTimers[t] > 350) {
+                        vhsTapes.push({ x: road.x + Math.random() * (road.width - 20), y: -14, type: t });
+                        vhsTimers[t] = 0;
+                    }
                 }
             }
 
@@ -613,17 +634,28 @@
                 tape.y += gameSpeed * dt;
 
                 if (
-                    player.x < tape.x + 16 &&
+                    player.x < tape.x + 20 &&
                     player.x + player.width > tape.x &&
-                    player.y < tape.y + 11 &&
+                    player.y < tape.y + 14 &&
                     player.y + player.height > tape.y
                 ) {
-                    song2Unlocked = true;
-                    localStorage.setItem("varoomSong2Unlocked", "true");
-                    selectedSong = "retro";
-                    localStorage.setItem("varoomSong", "retro");
-                    vhsTapes.splice(i, 1);
+                    if (tape.type === "retro") {
+                        song2Unlocked = true;
+                        localStorage.setItem("varoomSong2Unlocked", "true");
+                        selectedSong = "retro";
+                        localStorage.setItem("varoomSong", "retro");
+                        unlockMsg = "RETRO SONG UNLOCKED!";
+                    } else if (tape.type === "winter") {
+                        winterUnlocked = true;
+                        localStorage.setItem("varoomWinterUnlocked", "true");
+                        unlockMsg = "WINTER SONG UNLOCKED!";
+                    } else {
+                        post2000Unlocked = true;
+                        localStorage.setItem("varoomPost2000Unlocked", "true");
+                        unlockMsg = "POST-2000 SONG UNLOCKED!";
+                    }
                     unlockFlash = 90;
+                    vhsTapes.splice(i, 1);
                     playBg();
                     continue;
                 }
@@ -781,11 +813,11 @@
 
             for (let tape of vhsTapes) {
                 ctx.fillStyle = "#111111";
-                ctx.fillRect(tape.x, tape.y, 16, 11);
+                ctx.fillRect(tape.x, tape.y, 20, 14);
                 ctx.fillStyle = "#dddddd";
-                ctx.fillRect(tape.x + 2, tape.y + 2, 12, 4);
-                ctx.fillStyle = "#ffcc00";
-                ctx.fillRect(tape.x + 5, tape.y + 3, 6, 2);
+                ctx.fillRect(tape.x + 2, tape.y + 2, 16, 5);
+                ctx.fillStyle = vhsColors[tape.type];
+                ctx.fillRect(tape.x + 4, tape.y + 4, 12, 3);
             }
 
             for (let flake of snow) {
@@ -838,7 +870,7 @@
                 ctx.fillStyle = "#ffff33";
                 ctx.font = "bold 14px monospace";
                 ctx.textAlign = "center";
-                ctx.fillText("VHS TAPE UNLOCKED!", canvas.width / 2, 95);
+                ctx.fillText(unlockMsg, canvas.width / 2, 95);
                 ctx.font = "bold 10px monospace";
                 ctx.fillText("NEW SONG IN GARAGE", canvas.width / 2, 112);
                 ctx.textAlign = "left";
