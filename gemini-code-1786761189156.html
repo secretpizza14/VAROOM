@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Retro Drive - Levi .D inc & Fox.co (v1.23)</title>
+    <style>
+        body {
+            background-color: #111;
+            color: #fff;
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            border: 4px solid #fff;
+            background-color: #228b22;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+        .info-panel {
+            width: 450px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="info-panel">
+        <span>Levi .D inc & Fox.co</span>
+        <span>LEFT/RIGHT steer, DOWN slow/stop. Double P = Garage.</span>
+    </div>
+
+    <canvas id="gameCanvas" width="450" height="500"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let gameStarted = false;
+        let loadProgress = 0;
+        let wheelAngle = 0;
+        let readyToPlay = false;
+
+        let score = 0;
+        let highScore = localStorage.getItem("varoomHighScore") || 0;
+        let paused = false;
+        let gameOver = false;
+        
+        let baseGameSpeed = 3.2;
+        let gameSpeed = 3.2;
+
+        let lastPTime = 0;
+        let lastDownTime = 0;
+        let fullStop = false;
+        let devKeyBuffer = "";
+
+        let trafficPhase = "break";
+        let trafficPhaseTimer = 0;
+        const jamDuration = 600;   // 10 seconds
+        const breakDuration = 600; // 10 seconds
+
+        // Level Modes: "regular", "traffic", "getaway"
+        let selectedGameMode = localStorage.getItem("varoomMode") || "regular";
+
+        let copCars = [];
+        let sirenFlashTimer = 0;
+
+        let selectedCarSkin = parseInt(localStorage.getItem("varoomSkin")) || 0;
+        const carSkins = [
+            { outer: "#8b0000", inner: "#000000", name: "Classic Red/Black" },
+            { outer: "#000000", inner: "#00ff66", name: "Green & Black" },
+            { outer: "#800080", inner: "#00ffff", name: "Purple & Blue" }
+        ];
+
+        const road = { x: 120, width: 240, color: "#555" };
+        
+        const player = { 
+            x: 220, 
+            y: 400, 
+            width: 30, 
+            height: 50, 
+            speed: 5.5
+        };
+
+        let obstacles = [];
+        let scenery = [];
+        let debris = [];
+        let spawnTimer = 0;
+        let sceneryTimer = 0;
+
+        const carColors = ["#00ffff", "#ffff33", "#ff00ff", "#00ff66", "#ff9900"];
+        const semiCabColors = ["#cc0000", "#003366", "#20b2aa"]; 
+        const keys = { ArrowLeft: false, ArrowRight: false, ArrowDown: false };
+
+        window.addEventListener("keydown", (e) => {
+            if (keys.hasOwnProperty(e.code)) keys[e.code] = true;
+            
+            if (e.code === "ArrowDown") {
+                let now = Date.now();
+                if (now - lastDownTime < 400) {
+                    fullStop = true;
+                    lastDownTime = 0;
+                } else {
+                    fullStop = false;
+                    lastDownTime = now;
+                }
+            }
+
+            if (!gameStarted && readyToPlay && (e.code === "Space" || e.code === "Enter")) {
+                gameStarted = true;
+            }
+
+            if (gameStarted && !paused && !gameOver) {
+                if (e.key.toLowerCase() === 'l' || e.key.toLowerCase() === 'd') {
+                    devKeyBuffer += e.key.toLowerCase();
+                    if (devKeyBuffer.length > 2) {
+                        devKeyBuffer = devKeyBuffer.slice(-2);
+                    }
+                    if (devKeyBuffer === "ld") {
+                        score += 100;
+                        devKeyBuffer = "";
+                    }
+                } else {
+                    devKeyBuffer = "";
+                }
+            }
+
+            if (e.code === "KeyP" && gameStarted && !gameOver) {
+                let now = Date.now();
+                if (now - lastPTime < 400) {
+                    paused = !paused;
+                    lastPTime = 0;
+                } else {
+                    lastPTime = now;
+                }
+            }
+
+            if (gameOver && e.code === "Space") resetGame();
+        });
+
+        window.addEventListener("keyup", (e) => {
+            if (keys.hasOwnProperty(e.code)) {
+                keys[e.code] = false;
+                if (e.code === "ArrowDown") {
+                    fullStop = false;
+                }
+            }
+        });
+
+        window.addEventListener("click", (e) => {
+            if (!gameStarted && readyToPlay) {
+                gameStarted = true;
+                return;
+            }
+
+            if (paused) {
+                let rect = canvas.getBoundingClientRect();
+                let mouseX = e.clientX - rect.left;
+                let mouseY = e.clientY - rect.top;
+
+                // Skin selections (y: 65 to 260)
+                if (mouseY >= 65 && mouseY <= 260) {
+                    if (mouseX >= 75 && mouseX <= 165) {
+                        selectedCarSkin = 0;
+                        localStorage.setItem("varoomSkin", selectedCarSkin);
+                    }
+                    if (mouseX >= 180 && mouseX <= 270) {
+                        selectedCarSkin = 1;
+                        localStorage.setItem("varoomSkin", selectedCarSkin);
+                    }
+                    if (mouseX >= 285 && mouseX <= 375) {
+                        if (highScore >= 1000 || score >= 1000) {
+                            selectedCarSkin = 2;
+                            localStorage.setItem("varoomSkin", selectedCarSkin);
+                        }
+                    }
+                }
+
+                // Mode selections (y: 300 to 335)
+                if (mouseY >= 300 && mouseY <= 335) {
+                    if (mouseX >= 45 && mouseX <= 145) {
+                        selectedGameMode = "regular";
+                        localStorage.setItem("varoomMode", selectedGameMode);
+                    } else if (mouseX >= 155 && mouseX <= 255) {
+                        selectedGameMode = "traffic";
+                        localStorage.setItem("varoomMode", selectedGameMode);
+                    } else if (mouseX >= 265 && mouseX <= 405) {
+                        selectedGameMode = "getaway";
+                        localStorage.setItem("varoomMode", selectedGameMode);
+                    }
+                }
+            }
+        });
+
+        function triggerCrashExplosion() {
+            debris = [];
+            let currentSkin = carSkins[selectedCarSkin];
+            for (let i = 0; i < 20; i++) {
+                debris.push({
+                    x: player.x + player.width / 2,
+                    y: player.y + player.height / 2,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    color: Math.random() < 0.5 ? currentSkin.outer : "#ff3300",
+                    size: Math.random() * 5 + 3,
+                    life: 40
+                });
+            }
+        }
+
+        function resetGame() {
+            score = 0;
+            baseGameSpeed = 3.2;
+            gameSpeed = 3.2;
+            obstacles = [];
+            scenery = [];
+            debris = [];
+            copCars = [];
+            spawnTimer = 0;
+            sceneryTimer = 0;
+            player.x = 220;
+            paused = false;
+            gameOver = false;
+            devKeyBuffer = "";
+            trafficPhase = "break";
+            trafficPhaseTimer = 0;
+            fullStop = false;
+            sirenFlashTimer = 0;
+        }
+
+        function drawSpinningWheel(x, y, radius, angle) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            
+            ctx.fillStyle = "#111";
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = "#555";
+            ctx.stroke();
+            
+            ctx.fillStyle = "#ccc";
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.strokeStyle = "#111";
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                ctx.rotate(Math.PI / 2);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, radius);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function update() {
+            if (!gameStarted) {
+                wheelAngle += 0.12;
+                if (!readyToPlay) {
+                    loadProgress += 1.2;
+                    if (loadProgress >= 100) {
+                        loadProgress = 100;
+                        readyToPlay = true;
+                    }
+                }
+                return;
+            }
+
+            if (paused || gameOver) {
+                for (let i = debris.length - 1; i >= 0; i--) {
+                    debris[i].x += debris[i].vx;
+                    debris[i].y += debris[i].vy;
+                    debris[i].life--;
+                    if (debris[i].life <= 0) debris.splice(i, 1);
+                }
+                return;
+            }
+
+            sirenFlashTimer++;
+
+            if (selectedGameMode === "traffic") {
+                trafficPhaseTimer++;
+                if (trafficPhase === "jam") {
+                    if (trafficPhaseTimer >= jamDuration) {
+                        trafficPhase = "break";
+                        trafficPhaseTimer = 0;
+                    }
+                } else {
+                    if (trafficPhaseTimer >= breakDuration) {
+                        trafficPhase = "jam";
+                        trafficPhaseTimer = 0;
+                    }
+                }
+            }
+
+            let targetSpeed = baseGameSpeed;
+            if (keys.ArrowDown) {
+                if (fullStop) {
+                    targetSpeed = 0;
+                } else {
+                    targetSpeed = baseGameSpeed * 0.45;
+                }
+            }
+            gameSpeed += (targetSpeed - gameSpeed) * 0.2;
+
+            if (keys.ArrowLeft && player.x > road.x + 5) player.x -= player.speed;
+            if (keys.ArrowRight && player.x < road.x + road.width - player.width - 5) player.x += player.speed;
+
+            spawnTimer++;
+            let dynamicSpawnRate = 90;
+            if (selectedGameMode === "traffic" && trafficPhase === "jam") {
+                dynamicSpawnRate = 18;
+            } else if (selectedGameMode === "getaway") {
+                dynamicSpawnRate = 50; 
+            }
+
+            if (spawnTimer > dynamicSpawnRate) {
+                let isSemi = (selectedGameMode === "traffic" && trafficPhase === "jam") ? (Math.random() < 0.35) : false;
+                let obsWidth = isSemi ? 40 : 30;
+                let obsHeight = isSemi ? 115 : 50;
+                
+                let maxAttempts = 10;
+                let placed = false;
+                let x = road.x;
+
+                for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                    let testX = road.x + Math.random() * (road.width - obsWidth);
+                    let collision = false;
+
+                    for (let obs of obstacles) {
+                        if (obs.y < obsHeight + 20) {
+                            if (
+                                testX < obs.x + obs.width &&
+                                testX + obsWidth > obs.x &&
+                                -obsHeight < obs.y + obs.height &&
+                                0 > obs.y
+                            ) {
+                                collision = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!collision) {
+                        x = testX;
+                        placed = true;
+                        break;
+                    }
+                }
+
+                if (placed) {
+                    let obstacle = { 
+                        x: x, 
+                        y: -obsHeight, 
+                        width: obsWidth, 
+                        height: obsHeight, 
+                        isSemi: isSemi 
+                    };
+
+                    if (isSemi) {
+                        obstacle.cabColor = semiCabColors[Math.floor(Math.random() * semiCabColors.length)];
+                    } else {
+                        obstacle.color = carColors[Math.floor(Math.random() * carColors.length)];
+                    }
+
+                    obstacles.push(obstacle);
+                    spawnTimer = 0;
+                }
+            }
+
+            if (selectedGameMode === "getaway") {
+                if (copCars.length < 2 && Math.random() < 0.02) {
+                    let copWidth = 30;
+                    let copHeight = 50;
+                    let copX = road.x + Math.random() * (road.width - copWidth);
+                    copCars.push({
+                        x: copX,
+                        y: -80 - Math.random() * 100,
+                        width: copWidth,
+                        height: copHeight,
+                        speedOffset: 0.8
+                    });
+                }
+
+                for (let i = copCars.length - 1; i >= 0; i--) {
+                    let cop = copCars[i];
+                    if (cop.x < player.x) cop.x += 1.0;
+                    if (cop.x > player.x) cop.x -= 1.0;
+
+                    if (cop.x < road.x + 5) cop.x = road.x + 5;
+                    if (cop.x > road.x + road.width - cop.width - 5) cop.x = road.x + road.width - cop.width - 5;
+
+                    cop.y += gameSpeed * cop.speedOffset;
+
+                    if (
+                        player.x < cop.x + cop.width &&
+                        player.x + player.width > cop.x &&
+                        player.y < cop.y + cop.height &&
+                        player.y + player.height > cop.y
+                    ) {
+                        gameOver = true;
+                        triggerCrashExplosion();
+                        if (score > highScore) {
+                            highScore = score;
+                            localStorage.setItem("varoomHighScore", highScore);
+                        }
+                    }
+
+                    if (cop.y > canvas.height) {
+                        copCars.splice(i, 1);
+                    }
+                }
+            }
+
+            sceneryTimer++;
+            if (sceneryTimer > 30) {
+                let side = Math.random() < 0.5 ? "left" : "right";
+                let x = side === "left" ? 25 + Math.random() * 65 : road.x + road.width + 25 + Math.random() * 55;
+                scenery.push({ x: x, y: -40, size: 24 });
+                sceneryTimer = 0;
+            }
+
+            for (let i = scenery.length - 1; i >= 0; i--) {
+                scenery[i].y += gameSpeed;
+                if (scenery[i].y > canvas.height + 40) {
+                    scenery.splice(i, 1);
+                }
+            }
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].y += gameSpeed;
+
+                if (
+                    player.x < obstacles[i].x + obstacles[i].width &&
+                    player.x + player.width > obstacles[i].x &&
+                    player.y < obstacles[i].y + obstacles[i].height &&
+                    player.y + player.height > obstacles[i].y
+                ) {
+                    gameOver = true;
+                    triggerCrashExplosion();
+                    if (score > highScore) {
+                        highScore = score;
+                        localStorage.setItem("varoomHighScore", highScore);
+                    }
+                }
+
+                if (obstacles[i].y > canvas.height) {
+                    obstacles.splice(i, 1);
+                    score += 10;
+                }
+            }
+
+            let blockIndex = Math.floor(score / 500);
+            if (blockIndex % 2 === 1) {
+                baseGameSpeed = 4.2 + Math.floor((score % 500) / 70);
+            } else {
+                baseGameSpeed = 3.2 + Math.floor((score % 500) / 70);
+            }
+        }
+
+        function draw() {
+            let cycleIndex = Math.floor(score / 500);
+            let isNight = (cycleIndex % 2 === 1);
+            let currentSkin = carSkins[selectedCarSkin];
+
+            ctx.fillStyle = isNight ? "#0d2b0d" : "#228b22";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "#111111";
+            ctx.fillRect(0, 0, 120, canvas.height);
+            ctx.fillRect(road.x + road.width, 0, canvas.width - (road.x + road.width), canvas.height);
+
+            for (let tree of scenery) {
+                ctx.fillStyle = isNight ? "#38241b" : "#5c4033";
+                ctx.fillRect(tree.x + 8, tree.y + 12, 8, 12);
+                ctx.fillStyle = isNight ? "#002b00" : "#004d00";
+                ctx.beginPath();
+                ctx.moveTo(tree.x + 12, tree.y);
+                ctx.lineTo(tree.x, tree.y + 16);
+                ctx.lineTo(tree.x + 24, tree.y + 16);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            ctx.fillStyle = isNight ? "#2e2e2e" : road.color;
+            ctx.fillRect(road.x, 0, road.width, canvas.height);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(road.x, 0, 4, canvas.height);
+            ctx.fillRect(road.x + road.width - 4, 0, 4, canvas.height);
+
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 4;
+            ctx.setLineDash([20, 20]);
+            ctx.beginPath();
+            ctx.moveTo(road.x + road.width / 2, 0);
+            ctx.lineTo(road.x + road.width / 2, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            if (isNight) {
+                ctx.fillStyle = "rgba(255, 255, 150, 0.15)";
+                ctx.beginPath();
+                ctx.moveTo(player.x, player.y);
+                ctx.lineTo(player.x - 40, player.y - 120);
+                ctx.lineTo(player.x + player.width + 40, player.y - 120);
+                ctx.lineTo(player.x + player.width, player.y);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            if (!gameOver || debris.length > 10) {
+                ctx.fillStyle = currentSkin.outer;
+                ctx.fillRect(player.x, player.y, 3, player.height); 
+                ctx.fillRect(player.x + player.width - 3, player.y, 3, player.height); 
+                
+                ctx.fillStyle = currentSkin.inner;
+                ctx.fillRect(player.x + 3, player.y, player.width - 6, player.height);
+                
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(player.x + 6, player.y + 10, player.width - 12, 8);
+
+                if (keys.ArrowDown && gameStarted && !paused && !gameOver) {
+                    ctx.fillStyle = "#ff0000";
+                    ctx.fillRect(player.x + 3, player.y + player.height - 3, 5, 3);
+                    ctx.fillRect(player.x + player.width - 8, player.y + player.height - 3, 5, 3);
+                }
+            }
+
+            for (let p of debris) {
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+            }
+
+            for (let obs of obstacles) {
+                if (obs.isSemi) {
+                    ctx.fillStyle = obs.cabColor;
+                    ctx.fillRect(obs.x, obs.y, obs.width, 30);
+                    
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(obs.x + 5, obs.y + 8, obs.width - 10, 8);
+
+                    ctx.fillStyle = "#aaaaaa";
+                    ctx.fillRect(obs.x + 3, obs.y + 30, obs.width - 6, obs.height - 30);
+                    ctx.fillStyle = "#777777";
+                    ctx.fillRect(obs.x + 3, obs.y + 50, obs.width - 6, 4);
+                    ctx.fillRect(obs.x + 3, obs.y + 85, obs.width - 6, 4);
+                } else {
+                    ctx.fillStyle = obs.color;
+                    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(obs.x + 5, obs.y + 10, obs.width - 10, 8);
+                }
+            }
+
+            if (selectedGameMode === "getaway") {
+                for (let cop of copCars) {
+                    ctx.fillStyle = "#000000";
+                    ctx.fillRect(cop.x, cop.y, cop.width, 10);
+                    ctx.fillRect(cop.x, cop.y + cop.height - 10, cop.width, 10);
+
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(cop.x, cop.y + 10, cop.width, cop.height - 20);
+
+                    ctx.fillStyle = "#888888";
+                    ctx.fillRect(cop.x + 3, cop.y + 12, cop.width - 6, 4);
+
+                    let flash = Math.floor(sirenFlashTimer / 8) % 2 === 0;
+                    ctx.fillStyle = flash ? "#ff0000" : "#0000ff";
+                    ctx.fillRect(cop.x + 6, cop.y + 22, 6, 6);
+                    ctx.fillStyle = flash ? "#0000ff" : "#ff0000";
+                    ctx.fillRect(cop.x + cop.width - 12, cop.y + 22, 6, 6);
+                }
+            }
+
+            if (isNight) {
+                ctx.fillStyle = "rgba(255, 255, 0, 0.8)";
+                ctx.font = "bold 11px monospace";
+                ctx.fillText("NIGHT MODE", 22, 180);
+            } else {
+                ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+                ctx.font = "bold 11px monospace";
+                ctx.fillText("DAY MODE", 29, 180);
+            }
+
+            if (selectedGameMode === "traffic") {
+                let secondsRemaining = Math.ceil(((trafficPhase === "jam" ? jamDuration : breakDuration) - trafficPhaseTimer) / 60);
+                if (trafficPhase === "jam") {
+                    ctx.fillStyle = "#ff0055";
+                    ctx.font = "bold 12px monospace";
+                    ctx.fillText("TRAFFIC JAM!", 15, 210);
+                    ctx.fillStyle = "#ffff33";
+                    ctx.fillText("(" + secondsRemaining + "s left)", 15, 228);
+                } else {
+                    ctx.fillStyle = "#00ff66";
+                    ctx.font = "bold 12px monospace";
+                    ctx.fillText("ROAD CLEAR", 15, 210);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillText("(" + secondsRemaining + "s left)", 15, 228);
+                }
+            } else if (selectedGameMode === "getaway") {
+                ctx.fillStyle = "#ff3333";
+                ctx.font = "bold 12px monospace";
+                ctx.fillText("GETAWAY MODE", 15, 210);
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText("EVADE THE COPS!", 15, 228);
+            }
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 12px monospace";
+            ctx.fillText("SCORE:", 15, 270);
+            ctx.fillStyle = "#00ff66";
+            ctx.font = "bold 15px monospace";
+            ctx.fillText(score, 15, 290);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 12px monospace";
+            ctx.fillText("HIGH SCORE:", 15, 340);
+            ctx.fillStyle = "#ffff33";
+            ctx.font = "bold 15px monospace";
+            ctx.fillText(highScore, 15, 360);
+
+            if (!gameStarted) {
+                ctx.fillStyle = "rgba(0,0,0,0.9)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = "#00ffff";
+                ctx.font = "bold 18px monospace";
+                ctx.textAlign = "center";
+                ctx.fillText("Get ready to go VAROOM!", canvas.width / 2, canvas.height / 2 - 60);
+
+                drawSpinningWheel(canvas.width / 2, canvas.height / 2 - 10, 26, wheelAngle);
+
+                ctx.strokeStyle = "#fff";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(canvas.width / 2 - 100, canvas.height / 2 + 35, 200, 16);
+
+                ctx.fillStyle = "#00ff66";
+                ctx.fillRect(canvas.width / 2 - 98, canvas.height / 2 + 37, (196 * (loadProgress / 100)), 12);
+
+                ctx.fillStyle = "#fff";
+                ctx.font = "bold 12px monospace";
+                if (!readyToPlay) {
+                    ctx.fillText("LOADING " + Math.floor(loadProgress) + "%", canvas.width / 2, canvas.height / 2 + 75);
+                } else {
+                    ctx.fillStyle = "#ffff33";
+                    ctx.fillText("CLICK OR PRESS SPACE TO START", canvas.width / 2, canvas.height / 2 + 75);
+                }
+                ctx.textAlign = "left";
+            }
+
+            if (paused) {
+                ctx.fillStyle = "rgba(0,0,0,0.88)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = "#00ffff";
+                ctx.font = "bold 20px monospace";
+                ctx.textAlign = "center";
+                ctx.fillText("PAUSED - GARAGE", canvas.width / 2, 35);
+
+                ctx.fillStyle = "#fff";
+                ctx.font = "11px monospace";
+                ctx.fillText("Pick Paint Job:", canvas.width / 2, 55);
+
+                let boxX = 75;
+                let boxY = 65;
+                let boxWidth = 90;
+                let boxHeight = 195;
+
+                for (let i = 0; i < 3; i++) {
+                    let skin = carSkins[i];
+                    let isUnlocked = (i < 2) || (highScore >= 1000 || score >= 1000);
+                    let isSelected = (selectedCarSkin === i);
+
+                    ctx.fillStyle = isSelected ? "#222" : "#161616";
+                    ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+                    ctx.strokeStyle = isSelected ? "#00ff66" : "#555";
+                    ctx.lineWidth = isSelected ? 3 : 1;
+                    ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+                    let previewCarX = boxX + boxWidth / 2 - 15;
+                    let previewCarY = boxY + 20;
+
+                    if (isUnlocked) {
+                        ctx.fillStyle = skin.outer;
+                        ctx.fillRect(previewCarX, previewCarY, 3, 45);
+                        ctx.fillRect(previewCarX + 27, previewCarY, 3, 45);
+                        ctx.fillStyle = skin.inner;
+                        ctx.fillRect(previewCarX + 3, previewCarY, 24, 45);
+                        ctx.fillStyle = "#fff";
+                        ctx.fillRect(previewCarX + 6, previewCarY + 8, 18, 6);
+
+                        ctx.fillStyle = "#00ff66";
+                        ctx.font = "bold 10px monospace";
+                        ctx.fillText(isSelected ? "[ACTIVE]" : "SELECT", boxX + boxWidth / 2, boxY + 95);
+
+                        ctx.fillStyle = "#fff";
+                        ctx.font = "9px monospace";
+                        ctx.fillText(skin.name.split(" ")[0], boxX + boxWidth / 2, boxY + 130);
+                        ctx.fillText(skin.name.split(" ")[1] || "", boxX + boxWidth / 2, boxY + 143);
+                    } else {
+                        ctx.fillStyle = "#333";
+                        ctx.fillRect(previewCarX, previewCarY, 30, 45);
+                        
+                        ctx.fillStyle = "#ff0055";
+                        ctx.font = "bold 10px monospace";
+                        ctx.fillText("LOCKED", boxX + boxWidth / 2, boxY + 95);
+
+                        ctx.fillStyle = "#888";
+                        ctx.font = "9px monospace";
+                        ctx.fillText("Score 1000", boxX + boxWidth / 2, boxY + 130);
+                        ctx.fillText("to unlock", boxX + boxWidth / 2, boxY + 143);
+                    }
+
+                    boxX += 105;
+                }
+
+                ctx.fillStyle = "#fff";
+                ctx.font = "11px monospace";
+                ctx.fillText("Select Game Mode:", canvas.width / 2, 285);
+
+                const modes = [
+                    { id: "regular", label: "Regular", x: 45, w: 100 },
+                    { id: "traffic", label: "Traffic", x: 155, w: 100 },
+                    { id: "getaway", label: "Getaway", x: 265, w: 140 }
+                ];
+
+                for (let m of modes) {
+                    let isModeSelected = (selectedGameMode === m.id);
+                    ctx.fillStyle = isModeSelected ? "#222" : "#161616";
+                    ctx.fillRect(m.x, 300, m.w, 35);
+                    ctx.strokeStyle = isModeSelected ? "#00ff66" : "#555";
+                    ctx.lineWidth = isModeSelected ? 3 : 1;
+                    ctx.strokeRect(m.x, 300, m.w, 35);
+
+                    ctx.fillStyle = isModeSelected ? "#00ff66" : "#fff";
+                    ctx.font = "bold 11px monospace";
+                    ctx.fillText(m.label, m.x + m.w / 2, 322);
+                }
+
+                ctx.fillStyle = "#fff";
+                ctx.font = "11px monospace";
+                ctx.fillText("Double-press P to Resume", canvas.width / 2, 368);
+                ctx.textAlign = "left";
+            }
+
+            if (gameOver) {
+                ctx.fillStyle = "rgba(0,0,0,0.85)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#ff0055";
+                ctx.font = "bold 24px monospace";
+                ctx.textAlign = "center";
+                ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 15);
+                ctx.fillStyle = "#fff";
+                ctx.font = "14px monospace";
+                ctx.fillText("PRESS SPACE TO RESTART", canvas.width / 2, canvas.height / 2 + 15);
+                ctx.textAlign = "left";
+            }
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        loop();
+    </script>
+</body>
+</html>
