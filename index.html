@@ -35,7 +35,7 @@
 <body>
     <div class="info-panel">
         <span>Levi .D inc & Fox.co</span>
-        <span>LEFT/RIGHT steer, DOWN slow/stop. Double P = Garage.</span>
+        <span>LEFT/RIGHT steer, DOWN slow, double-tap DOWN = stop. Double P = Garage.</span>
     </div>
 
     <canvas id="gameCanvas" width="450" height="500"></canvas>
@@ -48,9 +48,10 @@
         let loadProgress = 0;
         let wheelAngle = 0;
         let readyToPlay = false;
+        let lastT = 0;
 
         let score = 0;
-        let highScore = localStorage.getItem("varoomHighScore") || 0;
+        let highScore = parseInt(localStorage.getItem("varoomHighScore")) || 0;
         let paused = false;
         let gameOver = false;
         
@@ -93,23 +94,28 @@
         let obstacles = [];
         let scenery = [];
         let debris = [];
+        let snow = [];
         let spawnTimer = 0;
         let sceneryTimer = 0;
+        let snowTimer = 0;
 
         const carColors = ["#00ffff", "#ffff33", "#ff00ff", "#00ff66", "#ff9900"];
         const semiCabColors = ["#cc0000", "#003366", "#20b2aa"]; 
         const keys = { ArrowLeft: false, ArrowRight: false, ArrowDown: false };
 
         window.addEventListener("keydown", (e) => {
+            if (["Space", "Enter", "ArrowLeft", "ArrowRight", "ArrowDown", "ArrowUp"].includes(e.code)) {
+                e.preventDefault();
+            }
+
             if (keys.hasOwnProperty(e.code)) keys[e.code] = true;
-            
-            if (e.code === "ArrowDown") {
+
+            if (e.code === "ArrowDown" && !e.repeat) {
                 let now = Date.now();
                 if (now - lastDownTime < 400) {
-                    fullStop = true;
+                    fullStop = !fullStop;
                     lastDownTime = 0;
                 } else {
-                    fullStop = false;
                     lastDownTime = now;
                 }
             }
@@ -133,7 +139,7 @@
                 }
             }
 
-            if (e.code === "KeyP" && gameStarted && !gameOver) {
+            if (e.code === "KeyP" && !e.repeat && gameStarted && !gameOver) {
                 let now = Date.now();
                 if (now - lastPTime < 400) {
                     paused = !paused;
@@ -149,9 +155,6 @@
         window.addEventListener("keyup", (e) => {
             if (keys.hasOwnProperty(e.code)) {
                 keys[e.code] = false;
-                if (e.code === "ArrowDown") {
-                    fullStop = false;
-                }
             }
         });
 
@@ -223,9 +226,11 @@
             obstacles = [];
             scenery = [];
             debris = [];
+            snow = [];
             copCars = [];
             spawnTimer = 0;
             sceneryTimer = 0;
+            snowTimer = 0;
             player.x = 220;
             paused = false;
             gameOver = false;
@@ -234,6 +239,9 @@
             trafficPhaseTimer = 0;
             fullStop = false;
             sirenFlashTimer = 0;
+            keys.ArrowLeft = false;
+            keys.ArrowRight = false;
+            keys.ArrowDown = false;
         }
 
         function drawSpinningWheel(x, y, radius, angle) {
@@ -266,11 +274,12 @@
             ctx.restore();
         }
 
-        function update() {
+        function update(delta) {
+            let dt = delta * 60;
             if (!gameStarted) {
-                wheelAngle += 0.12;
+                wheelAngle += 0.12 * dt;
                 if (!readyToPlay) {
-                    loadProgress += 1.2;
+                    loadProgress += 1.2 * dt;
                     if (loadProgress >= 100) {
                         loadProgress = 100;
                         readyToPlay = true;
@@ -281,18 +290,18 @@
 
             if (paused || gameOver) {
                 for (let i = debris.length - 1; i >= 0; i--) {
-                    debris[i].x += debris[i].vx;
-                    debris[i].y += debris[i].vy;
-                    debris[i].life--;
+                    debris[i].x += debris[i].vx * dt;
+                    debris[i].y += debris[i].vy * dt;
+                    debris[i].life -= dt;
                     if (debris[i].life <= 0) debris.splice(i, 1);
                 }
                 return;
             }
 
-            sirenFlashTimer++;
+            sirenFlashTimer += dt;
 
             if (selectedGameMode === "traffic") {
-                trafficPhaseTimer++;
+                trafficPhaseTimer += dt;
                 if (trafficPhase === "jam") {
                     if (trafficPhaseTimer >= jamDuration) {
                         trafficPhase = "break";
@@ -307,19 +316,17 @@
             }
 
             let targetSpeed = baseGameSpeed;
-            if (keys.ArrowDown) {
-                if (fullStop) {
-                    targetSpeed = 0;
-                } else {
-                    targetSpeed = baseGameSpeed * 0.45;
-                }
+            if (fullStop) {
+                targetSpeed = 0;
+            } else if (keys.ArrowDown) {
+                targetSpeed = baseGameSpeed * 0.45;
             }
-            gameSpeed += (targetSpeed - gameSpeed) * 0.2;
+            gameSpeed += (targetSpeed - gameSpeed) * (1 - Math.pow(0.8, dt));
 
-            if (keys.ArrowLeft && player.x > road.x + 5) player.x -= player.speed;
-            if (keys.ArrowRight && player.x < road.x + road.width - player.width - 5) player.x += player.speed;
+            if (keys.ArrowLeft && player.x > road.x + 5) player.x -= player.speed * dt;
+            if (keys.ArrowRight && player.x < road.x + road.width - player.width - 5) player.x += player.speed * dt;
 
-            spawnTimer++;
+            spawnTimer += dt;
             let dynamicSpawnRate = 90;
             if (selectedGameMode === "traffic" && trafficPhase === "jam") {
                 dynamicSpawnRate = 18;
@@ -382,7 +389,7 @@
             }
 
             if (selectedGameMode === "getaway") {
-                if (copCars.length < 2 && Math.random() < 0.02) {
+                if (copCars.length < 2 && Math.random() < 0.02 * dt) {
                     let copWidth = 30;
                     let copHeight = 50;
                     let copX = road.x + Math.random() * (road.width - copWidth);
@@ -397,13 +404,13 @@
 
                 for (let i = copCars.length - 1; i >= 0; i--) {
                     let cop = copCars[i];
-                    if (cop.x < player.x) cop.x += 1.0;
-                    if (cop.x > player.x) cop.x -= 1.0;
+                    if (cop.x < player.x) cop.x += 1.0 * dt;
+                    if (cop.x > player.x) cop.x -= 1.0 * dt;
 
                     if (cop.x < road.x + 5) cop.x = road.x + 5;
                     if (cop.x > road.x + road.width - cop.width - 5) cop.x = road.x + road.width - cop.width - 5;
 
-                    cop.y += gameSpeed * cop.speedOffset;
+                    cop.y += gameSpeed * cop.speedOffset * dt;
 
                     if (
                         player.x < cop.x + cop.width &&
@@ -425,7 +432,7 @@
                 }
             }
 
-            sceneryTimer++;
+            sceneryTimer += dt;
             if (sceneryTimer > 30) {
                 let side = Math.random() < 0.5 ? "left" : "right";
                 let x = side === "left" ? 25 + Math.random() * 65 : road.x + road.width + 25 + Math.random() * 55;
@@ -434,14 +441,35 @@
             }
 
             for (let i = scenery.length - 1; i >= 0; i--) {
-                scenery[i].y += gameSpeed;
+                scenery[i].y += gameSpeed * dt;
                 if (scenery[i].y > canvas.height + 40) {
                     scenery.splice(i, 1);
                 }
             }
 
+            if (score >= 1000) {
+                snowTimer += dt;
+                if (snowTimer > 8) {
+                    snow.push({
+                        x: Math.random() * canvas.width,
+                        y: -10,
+                        size: Math.random() * 3 + 2,
+                        vx: (Math.random() - 0.5) * 1.5,
+                        vy: Math.random() * 2 + 1.5
+                    });
+                    snowTimer = 0;
+                }
+
+                for (let i = snow.length - 1; i >= 0; i--) {
+                    let flake = snow[i];
+                    flake.x += flake.vx * dt;
+                    flake.y += (flake.vy + gameSpeed * 0.3) * dt;
+                    if (flake.y > canvas.height + 10) snow.splice(i, 1);
+                }
+            }
+
             for (let i = obstacles.length - 1; i >= 0; i--) {
-                obstacles[i].y += gameSpeed;
+                obstacles[i].y += gameSpeed * dt;
 
                 if (
                     player.x < obstacles[i].x + obstacles[i].width &&
@@ -474,9 +502,10 @@
         function draw() {
             let cycleIndex = Math.floor(score / 500);
             let isNight = (cycleIndex % 2 === 1);
+            let isWinter = score >= 1000;
             let currentSkin = carSkins[selectedCarSkin];
 
-            ctx.fillStyle = isNight ? "#0d2b0d" : "#228b22";
+            ctx.fillStyle = isNight ? (isWinter ? "#16222e" : "#0d2b0d") : (isWinter ? "#a5c9d6" : "#228b22");
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             ctx.fillStyle = "#111111";
@@ -486,16 +515,25 @@
             for (let tree of scenery) {
                 ctx.fillStyle = isNight ? "#38241b" : "#5c4033";
                 ctx.fillRect(tree.x + 8, tree.y + 12, 8, 12);
-                ctx.fillStyle = isNight ? "#002b00" : "#004d00";
+                ctx.fillStyle = isWinter ? "#eaf4f8" : (isNight ? "#002b00" : "#004d00");
                 ctx.beginPath();
                 ctx.moveTo(tree.x + 12, tree.y);
                 ctx.lineTo(tree.x, tree.y + 16);
                 ctx.lineTo(tree.x + 24, tree.y + 16);
                 ctx.closePath();
                 ctx.fill();
+                if (isWinter) {
+                    ctx.fillStyle = "#ffffff";
+                    ctx.beginPath();
+                    ctx.moveTo(tree.x + 12, tree.y);
+                    ctx.lineTo(tree.x + 5, tree.y + 7);
+                    ctx.lineTo(tree.x + 19, tree.y + 7);
+                    ctx.closePath();
+                    ctx.fill();
+                }
             }
 
-            ctx.fillStyle = isNight ? "#2e2e2e" : road.color;
+            ctx.fillStyle = isNight ? (isWinter ? "#3a4a52" : "#2e2e2e") : (isWinter ? "#98a6ad" : road.color);
             ctx.fillRect(road.x, 0, road.width, canvas.height);
 
             ctx.fillStyle = "#ffffff";
@@ -533,7 +571,7 @@
                 ctx.fillStyle = "#ffffff";
                 ctx.fillRect(player.x + 6, player.y + 10, player.width - 12, 8);
 
-                if (keys.ArrowDown && gameStarted && !paused && !gameOver) {
+                if ((keys.ArrowDown || fullStop) && gameStarted && !paused && !gameOver) {
                     ctx.fillStyle = "#ff0000";
                     ctx.fillRect(player.x + 3, player.y + player.height - 3, 5, 3);
                     ctx.fillRect(player.x + player.width - 8, player.y + player.height - 3, 5, 3);
@@ -586,6 +624,13 @@
                 }
             }
 
+            for (let flake of snow) {
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(flake.x, flake.y, flake.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
             if (isNight) {
                 ctx.fillStyle = "rgba(255, 255, 0, 0.8)";
                 ctx.font = "bold 11px monospace";
@@ -594,6 +639,12 @@
                 ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
                 ctx.font = "bold 11px monospace";
                 ctx.fillText("DAY MODE", 29, 180);
+            }
+
+            if (isWinter) {
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 11px monospace";
+                ctx.fillText("WINTER MODE", 22, 196);
             }
 
             if (selectedGameMode === "traffic") {
@@ -771,13 +822,16 @@
             }
         }
 
-        function loop() {
-            update();
+        function loop(t) {
+            if (lastT === 0) lastT = t;
+            let delta = Math.min((t - lastT) / 1000, 0.1);
+            lastT = t;
+            update(delta);
             draw();
             requestAnimationFrame(loop);
         }
 
-        loop();
+        requestAnimationFrame(loop);
     </script>
 </body>
 </html>
