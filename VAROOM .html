@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Retro Drive - Levi .D inc</title>
+    <style>
+        body {
+            background-color: #111;
+            color: #fff;
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            border: 4px solid #fff;
+            background-color: #228b22;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="500"></canvas>
+    <p>Use LEFT / RIGHT ARROWS to steer. Press SPACE to restart.</p>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let score = 0;
+        let gameOver = false;
+        let gameSpeed = 5;
+
+        const road = { x: 80, width: 240, color: "#555" };
+        const player = { x: 180, y: 400, width: 34, height: 54, speed: 6, color: "#ff3333" };
+        let obstacles = [];
+        let spawnTimer = 0;
+
+        const carColors = ["#00ffff", "#ffff33", "#ff00ff", "#00ff66", "#ff9900"];
+        const keys = { ArrowLeft: false, ArrowRight: false };
+
+        window.addEventListener("keydown", (e) => {
+            if (keys.hasOwnProperty(e.code)) keys[e.code] = true;
+            if (gameOver && e.code === "Space") resetGame();
+        });
+
+        window.addEventListener("keyup", (e) => {
+            if (keys.hasOwnProperty(e.code)) keys[e.code] = false;
+        });
+
+        function resetGame() {
+            score = 0;
+            gameSpeed = 5;
+            obstacles = [];
+            spawnTimer = 0;
+            player.x = 180;
+            gameOver = false;
+        }
+
+        // Helper to draw a pixel-styled mini muscle car (Dodge Challenger Vibe)
+        function drawChallengerCar(x, y, w, h, bodyColor) {
+            // Main Body
+            ctx.fillStyle = bodyColor;
+            ctx.fillRect(x + 2, y + 6, w - 4, h - 12);
+            ctx.fillRect(x, y + 12, w, h - 24);
+
+            // Muscle Car Hood Cowl & Trunk Ridges
+            ctx.fillStyle = "#111";
+            ctx.fillRect(x + 8, y + 10, w - 16, 4); // Hood scoop accent
+
+            // Front & Rear Windows (Windshield & Rear glass)
+            ctx.fillStyle = "#87ceeb"; // Light blue glass
+            ctx.fillRect(x + 5, y + 16, w - 10, 10); // Front windshield
+            ctx.fillRect(x + 6, y + 32, w - 12, 8);  // Rear window
+
+            // Headlights / Tail light accents
+            ctx.fillStyle = "#ffff00"; // Headlights
+            ctx.fillRect(x, y + 12, 2, 4);
+            ctx.fillRect(x + w - 2, y + 12, 2, 4);
+
+            // Tires
+            ctx.fillStyle = "#000";
+            ctx.fillRect(x - 2, y + 8, 3, 10);
+            ctx.fillRect(x + w - 1, y + 8, 3, 10);
+            ctx.fillRect(x - 2, y + h - 18, 3, 10);
+            ctx.fillRect(x + w - 1, y + h - 18, 3, 10);
+        }
+
+        function update() {
+            if (gameOver) return;
+
+            if (keys.ArrowLeft && player.x > road.x + 5) player.x -= player.speed;
+            if (keys.ArrowRight && player.x < road.x + road.width - player.width - 5) player.x += player.speed;
+
+            // Progressive Spawning & Speed Scaling: The higher the score, the faster traffic spawns and drives!
+            spawnTimer++;
+            let dynamicSpawnRate = Math.max(20, 50 - Math.floor(score / 30));
+            if (spawnTimer > dynamicSpawnRate) {
+                let x = road.x + Math.random() * (road.width - 34);
+                let color = carColors[Math.floor(Math.random() * carColors.length)];
+                obstacles.push({ x: x, y: -60, width: 34, height: 54, color: color });
+                spawnTimer = 0;
+            }
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].y += gameSpeed;
+
+                // Collision Box check
+                if (
+                    player.x < obstacles[i].x + obstacles[i].width &&
+                    player.x + player.width > obstacles[i].x &&
+                    player.y < obstacles[i].y + obstacles[i].height &&
+                    player.y + player.height > obstacles[i].y
+                ) {
+                    gameOver = true;
+                }
+
+                if (obstacles[i].y > canvas.height) {
+                    obstacles.splice(i, 1);
+                    score += 10;
+                    // Scales game traffic speed upward as score increases
+                    gameSpeed = 5 + Math.floor(score / 40);
+                }
+            }
+        }
+
+        function draw() {
+            // Grass Background
+            ctx.fillStyle = "#228b22";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Road
+            ctx.fillStyle = road.color;
+            ctx.fillRect(road.x, 0, road.width, canvas.height);
+
+            // Road Dashed Center Divider
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 4;
+            ctx.setLineDash([20, 20]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw Player (Mini Red Challenger)
+            drawChallengerCar(player.x, player.y, player.width, player.height, player.color);
+
+            // Draw Obstacle Cars
+            for (let obs of obstacles) {
+                drawChallengerCar(obs.x, obs.y, obs.width, obs.height, obs.color);
+            }
+
+            // Top Left Branding Overlay
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 14px monospace";
+            ctx.fillText("Levi .D inc", 15, 25);
+
+            // Score Tracker
+            ctx.fillText("SCORE: " + score, 15, 45);
+
+            if (gameOver) {
+                ctx.fillStyle = "rgba(0,0,0,0.8)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#ff0055";
+                ctx.font = "bold 24px monospace";
+                ctx.textAlign = "center";
+                ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
+                ctx.fillStyle = "#fff";
+                ctx.font = "14px monospace";
+                ctx.fillText("PRESS SPACE TO RESTART", canvas.width / 2, canvas.height / 2 + 20);
+                ctx.textAlign = "left";
+            }
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        loop();
+    </script>
+</body>
+</html>

@@ -37,11 +37,12 @@ All modes share the same seasons/physics below.
 - **1000–1999: winter** — snowy palette, snow-capped trees, falling snow particles, "WINTER MODE" label, and instant steering (grip = 1.0). (No summer mode — after 1999 it returns to regular.)
 
 ## Paint jobs (Garage)
-- Three skins; the 3rd ("Purple & Blue") unlocks at a score/high-score of 1000.
-- Selection persisted in `localStorage` (`varoomSkin`); game mode in `varoomMode`.
+- Four skins; the 3rd ("Purple & Blue") unlocks at a score/high-score of 1000; the 4th ("Red Challenger" — the Challenger design from `VAROOM .html`, red body + 2px yellow center stripe) is a **secret** unlock: it requires crashing into semi-trucks 3 times total (persisted in `varoomSemiHits`). The unlock method is NOT shown in-game (locked box just says "????").
+- Selection persisted in `localStorage` (`varoomSkin`); game mode in `varoomMode`. Song unlocks (VHS tapes) are **session-only** (reset each page load).
 
 ## Dev / secret things
 - **`ld` cheat**: type `l` then `d` while playing to get **+100 score**. Works even while paused (Garage). Not documented in-game.
+- **Red Challenger skin**: hidden unlock (see Paint jobs). Also not documented in-game.
 
 ## Technical conventions
 - `update(delta)` / `draw()` split; `delta` is seconds, converted to frame units via `dt = delta * 60` so all physics are frame-rate independent (60fps-reference values).
