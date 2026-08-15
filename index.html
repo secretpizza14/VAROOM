@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Retro Drive - Levi .D inc & Fox.co (v1.23)</title>
+    <title>Retro Drive - Levi .D inc & Fox.co (v1.24)</title>
     <style>
         body {
             background-color: #111;
@@ -98,11 +98,24 @@
         const jamDuration = 600;   // 10 seconds
         const breakDuration = 600; // 10 seconds
 
-        // Level Modes: "regular", "traffic", "getaway"
+        // Level Modes: "regular", "traffic", "getaway", "survival"
         let selectedGameMode = localStorage.getItem("varoomMode") || "regular";
 
         let copCars = [];
         let sirenFlashTimer = 0;
+
+        let gas = 100;
+        let tiredness = 0;
+        let pulledOver = false;
+        let sleeping = false;
+        let brokenDown = false;
+        let sleepTimer = 0;
+        let breakdownTimer = 0;
+        let gasStations = [];
+        let nextStationScore = 500;
+        let toastTimer = 0;
+        let toastText = "";
+        let asleepGameOver = false;
 
         let selectedCarSkin = parseInt(localStorage.getItem("varoomSkin")) || 0;
         let semiHits = parseInt(localStorage.getItem("varoomSemiHits")) || 0;
@@ -186,6 +199,16 @@
                 }
             }
 
+            if (e.code === "KeyZ" && !e.repeat && gameStarted && !gameOver && !paused && selectedGameMode === "survival") {
+                if (!pulledOver && !sleeping && !brokenDown) {
+                    sleeping = true;
+                    pulledOver = true;
+                    sleepTimer = 0;
+                    toastTimer = 90;
+                    toastText = "PULLED OVER - SLEEPING...";
+                }
+            }
+
             if (gameOver && e.code === "Space") resetGame();
         });
 
@@ -231,14 +254,17 @@
 
                 // Mode selections (y: 300 to 335)
                 if (mouseY >= 300 && mouseY <= 335) {
-                    if (mouseX >= 45 && mouseX <= 145) {
+                    if (mouseX >= 42 && mouseX <= 130) {
                         selectedGameMode = "regular";
                         localStorage.setItem("varoomMode", selectedGameMode);
-                    } else if (mouseX >= 155 && mouseX <= 255) {
+                    } else if (mouseX >= 134 && mouseX <= 222) {
                         selectedGameMode = "traffic";
                         localStorage.setItem("varoomMode", selectedGameMode);
-                    } else if (mouseX >= 265 && mouseX <= 405) {
+                    } else if (mouseX >= 226 && mouseX <= 314) {
                         selectedGameMode = "getaway";
+                        localStorage.setItem("varoomMode", selectedGameMode);
+                    } else if (mouseX >= 318 && mouseX <= 406) {
+                        selectedGameMode = "survival";
                         localStorage.setItem("varoomMode", selectedGameMode);
                     }
                 }
@@ -312,6 +338,18 @@
             trafficPhaseTimer = 0;
             fullStop = false;
             sirenFlashTimer = 0;
+            gas = 100;
+            tiredness = 0;
+            pulledOver = false;
+            sleeping = false;
+            brokenDown = false;
+            sleepTimer = 0;
+            breakdownTimer = 0;
+            gasStations = [];
+            nextStationScore = 500;
+            toastTimer = 0;
+            toastText = "";
+            asleepGameOver = false;
             keys.ArrowLeft = false;
             keys.ArrowRight = false;
             keys.ArrowDown = false;
@@ -438,7 +476,9 @@
             }
 
             let targetSpeed = baseGameSpeed;
-            if (fullStop) {
+            if (pulledOver) {
+                targetSpeed = 0;
+            } else if (fullStop) {
                 targetSpeed = 0;
             } else if (keys.ArrowDown) {
                 targetSpeed = baseGameSpeed * 0.45;
@@ -447,8 +487,10 @@
 
             let grip = season === "winter" ? 1.0 : 0.15;
             let targetVx = 0;
-            if (keys.ArrowLeft && player.x > road.x + 5) targetVx = -player.speed;
-            if (keys.ArrowRight && player.x < road.x + road.width - player.width - 5) targetVx = player.speed;
+            if (!pulledOver) {
+                if (keys.ArrowLeft && player.x > road.x + 5) targetVx = -player.speed;
+                if (keys.ArrowRight && player.x < road.x + road.width - player.width - 5) targetVx = player.speed;
+            }
             player.vx += (targetVx - player.vx) * grip;
             player.x += player.vx * dt;
 
@@ -461,7 +503,7 @@
                 player.vx = 0;
             }
 
-            if (Math.abs(player.vx) > 1.5 && gameSpeed > 0.5) {
+            if (Math.abs(player.vx) > 1.5 && gameSpeed > 0.5 && !pulledOver) {
                 skidTimer += dt;
                 if (skidTimer > 3) {
                     skidMarks.push({
@@ -474,6 +516,82 @@
                 }
             } else {
                 skidTimer = 0;
+            }
+
+            if (selectedGameMode === "survival") {
+                if (!pulledOver && !brokenDown) {
+                    gas -= 0.018 * dt;
+                    if (gas <= 0) {
+                        gas = 0;
+                        brokenDown = true;
+                        breakdownTimer = 0;
+                        pulledOver = true;
+                        toastTimer = 120;
+                        toastText = "OUT OF GAS!";
+                    }
+                }
+
+                if (!sleeping && !brokenDown) {
+                    tiredness += 0.013 * dt;
+                    if (tiredness >= 100) {
+                        tiredness = 100;
+                        asleepGameOver = true;
+                        gameOver = true;
+                        triggerCrashExplosion();
+                    }
+                }
+
+                if (pulledOver) {
+                    let leftEdge = road.x + 5;
+                    let rightEdge = road.x + road.width - player.width - 5;
+                    let target = player.x < road.x + road.width / 2 ? leftEdge : rightEdge;
+                    player.x += (target - player.x) * (1 - Math.pow(0.9, dt));
+                    player.vx = 0;
+
+                    if (sleeping) {
+                        sleepTimer += dt;
+                        tiredness = Math.max(0, tiredness - 0.8 * dt);
+                        if (sleepTimer >= 1200) {
+                            sleeping = false;
+                            pulledOver = false;
+                            tiredness = 0;
+                            toastTimer = 90;
+                            toastText = "WAKE UP!";
+                        }
+                    } else if (brokenDown) {
+                        breakdownTimer += dt;
+                        if (breakdownTimer >= 600) {
+                            brokenDown = false;
+                            pulledOver = false;
+                            gas = 25;
+                            toastTimer = 90;
+                            toastText = "AUTO-FIXED! RESERVE GAS";
+                        }
+                    }
+                }
+
+                if (score >= nextStationScore) {
+                    gasStations.push({ x: road.x + Math.random() * (road.width - 34), y: -40 });
+                    nextStationScore += 500;
+                }
+
+                for (let i = gasStations.length - 1; i >= 0; i--) {
+                    let st = gasStations[i];
+                    st.y += gameSpeed * dt;
+                    if (
+                        player.x < st.x + 34 &&
+                        player.x + player.width > st.x &&
+                        player.y < st.y + 30 &&
+                        player.y + player.height > st.y
+                    ) {
+                        gas = 100;
+                        gasStations.splice(i, 1);
+                        toastTimer = 90;
+                        toastText = "REFUELED!";
+                        continue;
+                    }
+                    if (st.y > canvas.height + 40) gasStations.splice(i, 1);
+                }
             }
 
             spawnTimer += dt;
@@ -633,6 +751,7 @@
                 obstacles[i].y += gameSpeed * dt;
 
                 if (
+                    !pulledOver &&
                     player.x < obstacles[i].x + obstacles[i].width &&
                     player.x + player.width > obstacles[i].x &&
                     player.y < obstacles[i].y + obstacles[i].height &&
@@ -704,6 +823,7 @@
             }
 
             if (unlockFlash > 0) unlockFlash -= dt;
+            if (toastTimer > 0) toastTimer -= dt;
 
             let blockIndex = Math.floor(score / 500);
             if (blockIndex % 2 === 1) {
@@ -771,6 +891,19 @@
             ctx.lineTo(road.x + road.width / 2, canvas.height);
             ctx.stroke();
             ctx.setLineDash([]);
+
+            for (let st of gasStations) {
+                ctx.fillStyle = "rgba(0, 100, 200, 0.35)";
+                ctx.fillRect(st.x, st.y, 34, 30);
+                ctx.strokeStyle = "#33ccff";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(st.x, st.y, 34, 30);
+                ctx.fillStyle = "#33ccff";
+                ctx.font = "bold 8px monospace";
+                ctx.fillText("GAS", st.x + 17 - 10, st.y + 18);
+                ctx.fillStyle = "#ffff33";
+                ctx.fillRect(st.x + 5, st.y + 22, 24, 4);
+            }
 
             for (let mark of skidMarks) {
                 let alpha = Math.max(0, mark.life / 180) * 0.4;
@@ -858,6 +991,22 @@
                 }
             }
 
+            if (sleeping) {
+                ctx.fillStyle = "#aaeeff";
+                ctx.font = "bold 16px monospace";
+                ctx.fillText("Z", player.x + player.width / 2 + 8, player.y - 6);
+                ctx.font = "bold 11px monospace";
+                ctx.fillText("z", player.x + player.width / 2 + 20, player.y - 14);
+                ctx.font = "bold 8px monospace";
+                ctx.fillText("z", player.x + player.width / 2 + 27, player.y - 20);
+            }
+
+            if (brokenDown) {
+                ctx.fillStyle = "#ffcc00";
+                ctx.font = "bold 10px monospace";
+                ctx.fillText("BROKEN DOWN!", player.x + player.width / 2 - 28, player.y - 8);
+            }
+
             for (let tape of vhsTapes) {
                 ctx.fillStyle = "#111111";
                 ctx.fillRect(tape.x, tape.y, 20, 14);
@@ -911,6 +1060,14 @@
                 ctx.fillText("GETAWAY MODE", 15, 210);
                 ctx.fillStyle = "#ffffff";
                 ctx.fillText("EVADE THE COPS!", 15, 228);
+            } else if (selectedGameMode === "survival") {
+                ctx.fillStyle = "#33ccff";
+                ctx.font = "bold 12px monospace";
+                ctx.fillText("SURVIVAL MODE", 15, 210);
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "10px monospace";
+                ctx.fillText("MANAGE GAS + TIREDNESS", 15, 228);
+                ctx.fillText("Z = PULL OVER", 15, 244);
             }
 
             if (unlockFlash > 0) {
@@ -936,6 +1093,40 @@
             ctx.fillStyle = "#ffff33";
             ctx.font = "bold 15px monospace";
             ctx.fillText(highScore, 15, 360);
+
+            if (selectedGameMode === "survival") {
+                ctx.font = "bold 10px monospace";
+                ctx.fillStyle = "#33ccff";
+                ctx.fillText("GAS", 15, 392);
+                ctx.fillStyle = "#333333";
+                ctx.fillRect(15, 398, 70, 8);
+                ctx.fillStyle = gas > 30 ? "#33ff66" : "#ff3333";
+                ctx.fillRect(15, 398, 70 * gas / 100, 8);
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(15, 398, 70, 8);
+
+                ctx.fillStyle = "#ffff66";
+                ctx.fillText("TIRED", 15, 424);
+                ctx.fillStyle = "#333333";
+                ctx.fillRect(15, 430, 70, 8);
+                ctx.fillStyle = tiredness > 60 ? "#ff6600" : "#ffcc00";
+                ctx.fillRect(15, 430, 70 * tiredness / 100, 8);
+                ctx.strokeStyle = "#ffffff";
+                ctx.strokeRect(15, 430, 70, 8);
+                if (tiredness >= 50) {
+                    ctx.fillStyle = "#ffaa00";
+                    ctx.fillText("GETTING SLEEPY!", 92, 418);
+                }
+            }
+
+            if (toastTimer > 0) {
+                ctx.fillStyle = "rgba(0,0,0,0.7)";
+                ctx.fillRect(15, 452, 220, 20);
+                ctx.fillStyle = "#ffff33";
+                ctx.font = "bold 10px monospace";
+                ctx.fillText(toastText, 20, 466);
+            }
 
             if (!gameStarted) {
                 ctx.fillStyle = "rgba(0,0,0,0.9)";
@@ -1047,9 +1238,10 @@
                 ctx.fillText("Select Game Mode:", canvas.width / 2, 285);
 
                 const modes = [
-                    { id: "regular", label: "Regular", x: 45, w: 100 },
-                    { id: "traffic", label: "Traffic", x: 155, w: 100 },
-                    { id: "getaway", label: "Getaway", x: 265, w: 140 }
+                    { id: "regular", label: "Regular", x: 42, w: 88 },
+                    { id: "traffic", label: "Traffic", x: 134, w: 88 },
+                    { id: "getaway", label: "Getaway", x: 226, w: 88 },
+                    { id: "survival", label: "Survival", x: 318, w: 88 }
                 ];
 
                 for (let m of modes) {
@@ -1118,9 +1310,18 @@
                 ctx.font = "bold 24px monospace";
                 ctx.textAlign = "center";
                 ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 15);
-                ctx.fillStyle = "#fff";
-                ctx.font = "14px monospace";
-                ctx.fillText("PRESS SPACE TO RESTART", canvas.width / 2, canvas.height / 2 + 15);
+                if (asleepGameOver) {
+                    ctx.fillStyle = "#ffcc00";
+                    ctx.font = "bold 13px monospace";
+                    ctx.fillText("YOU FELL ASLEEP AT THE WHEEL!", canvas.width / 2, canvas.height / 2 + 12);
+                    ctx.fillStyle = "#fff";
+                    ctx.font = "11px monospace";
+                    ctx.fillText("PRESS Z NEXT TIME TO SLEEP SAFELY", canvas.width / 2, canvas.height / 2 + 32);
+                } else {
+                    ctx.fillStyle = "#fff";
+                    ctx.font = "14px monospace";
+                    ctx.fillText("PRESS SPACE TO RESTART", canvas.width / 2, canvas.height / 2 + 15);
+                }
                 ctx.textAlign = "left";
             }
 

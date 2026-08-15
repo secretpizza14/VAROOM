@@ -4,7 +4,7 @@
 A single-file, dependency-free browser game. Open `index.html` in any browser to play.
 Everything lives in one `<script>` block: no build step, no libraries, plain HTML5 Canvas.
 
-Title screen name: **"Retro Drive - Levi .D inc & Fox.co"** (v1.23).
+Title screen name: **"Retro Drive - Levi .D inc & Fox.co"** (v1.24).
 
 ## How to run
 - `open index.html` (or just double-click it in Finder).
@@ -29,6 +29,7 @@ Title screen name: **"Retro Drive - Levi .D inc & Fox.co"** (v1.23).
 - **Regular** — standard obstacles (incl. occasional semis).
 - **Traffic** — road alternates between "ROAD CLEAR" (break) and "TRAFFIC JAM" phases every ~10s; during a jam, cars spawn far faster and semis appear more often.
 - **Getaway** — cop cars (max 2) spawn ahead and home in on your X position while chasing you down the road; hitting one is game over.
+- **Survival** — manage **gas** and **tiredness** (meters bottom-left). Gas drains continuously; tiredness rises. Every 500 score a **gas station** tile scrolls down the road — drive over it to refuel (+toast "REFUELED!"). Running out of gas = pull over + **10s auto-fix** (toast "AUTO-FIXED! RESERVE GAS", refills to 25). At tiredness 100 you fall asleep at the wheel and crash (special "YOU FELL ASLEEP" game over). Press **Z** to pull over and sleep (20s, toast "PULLED OVER - SLEEPING..."); while parked you're safe from collisions and traffic passes by, then you wake rested. Zzz floats above the car while sleeping. When below 50 tiredness the label "GETTING SLEEPY!" warns you.
 
 All modes share the same seasons/physics below.
 
