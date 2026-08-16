@@ -1296,16 +1296,6 @@
                     ctx.fillText(m.label, m.x + m.w / 2, 322);
                 }
 
-                let pinkSemiY = 347;
-                ctx.fillStyle = pinkSemiUnlocked ? "#1a1a22" : "#161616";
-                ctx.fillRect(30, pinkSemiY, 405, 17);
-                ctx.strokeStyle = pinkSemiUnlocked ? "#ff1493" : "#555";
-                ctx.lineWidth = 1;
-                ctx.strokeRect(30, pinkSemiY, 405, 17);
-                ctx.fillStyle = pinkSemiUnlocked ? "#ff1493" : "#ff0055";
-                ctx.font = "bold 8px monospace";
-                ctx.fillText(pinkSemiUnlocked ? "BRIGHT PINK SEMI: UNLOCKED!" : "????: LOCKED", canvas.width / 2, pinkSemiY + 12);
-
                 ctx.strokeStyle = "#00ff66";
                 ctx.lineWidth = 2;
                 ctx.strokeRect(373, 345, 72, 150);
@@ -1349,6 +1339,18 @@
                 ctx.fillStyle = "#fff";
                 ctx.font = "11px monospace";
                 ctx.fillText("Double-press P to Resume", canvas.width / 2, 368);
+
+                let pinkSemiY = 378;
+                let pinkSemiW = 335;
+                ctx.fillStyle = pinkSemiUnlocked ? "#1a1a22" : "#161616";
+                ctx.fillRect(30, pinkSemiY, pinkSemiW, 80);
+                ctx.strokeStyle = pinkSemiUnlocked ? "#ff1493" : "#555";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(30, pinkSemiY, pinkSemiW, 80);
+                ctx.fillStyle = pinkSemiUnlocked ? "#ff1493" : "#ff0055";
+                ctx.font = "bold 9px monospace";
+                ctx.fillText(pinkSemiUnlocked ? "BRIGHT PINK SEMI: UNLOCKED!" : "????: LOCKED", 30 + pinkSemiW / 2, pinkSemiY + 48);
+
                 ctx.textAlign = "left";
             }
 
