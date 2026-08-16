@@ -309,8 +309,15 @@
                 }
 
                 if (mouseY >= 378 && mouseY <= 458 && mouseX >= 30 && mouseX <= 365) {
-                    toastTimer = 90;
-                    toastText = pinkSemiUnlocked ? "PINK SEMI ACTIVE!" : "CRASH INTO 10 CARS TO UNLOCK!";
+                    if (pinkSemiUnlocked) {
+                        selectedCarSkin = 4;
+                        localStorage.setItem("varoomSkin", selectedCarSkin);
+                        toastTimer = 90;
+                        toastText = "PINK SEMI ACTIVE!";
+                    } else {
+                        toastTimer = 90;
+                        toastText = "CRASH INTO 10 CARS TO UNLOCK!";
+                    }
                 }
             }
 
@@ -964,6 +971,19 @@
             if (!gameOver || debris.length > 10) {
                 if (currentSkin.challenger) {
                     drawChallengerCar(player.x, player.y, player.width, player.height);
+                } else if (selectedCarSkin === 4) {
+                    ctx.fillStyle = "#ff1493";
+                    ctx.fillRect(player.x, player.y, player.width, 20);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(player.x + 5, player.y + 5, player.width - 10, 6);
+                    ctx.fillStyle = "#0066ff";
+                    ctx.fillRect(player.x + 6, player.y + 7, 2, 16);
+                    ctx.fillRect(player.x + player.width - 8, player.y + 7, 2, 16);
+                    ctx.fillStyle = "#aaaaaa";
+                    ctx.fillRect(player.x, player.y + 20, player.width, player.height - 20);
+                    ctx.fillStyle = "#777777";
+                    ctx.fillRect(player.x, player.y + 30, player.width, 3);
+                    ctx.fillRect(player.x, player.y + 42, player.width, 3);
                 } else {
                     ctx.fillStyle = currentSkin.outer;
                     ctx.fillRect(player.x, player.y, 3, player.height); 
@@ -998,8 +1018,8 @@
 
                     if (obs.cabColor === "#ff1493") {
                         ctx.fillStyle = "#0066ff";
-                        ctx.fillRect(obs.x + 2, obs.y + 10, obs.width - 4, 2);
-                        ctx.fillRect(obs.x + 2, obs.y + 18, obs.width - 4, 2);
+                        ctx.fillRect(obs.x + 12, obs.y + 2, 2, 26);
+                        ctx.fillRect(obs.x + 26, obs.y + 2, 2, 26);
                     }
 
                     ctx.fillStyle = "#aaaaaa";
@@ -1356,21 +1376,30 @@
                 if (pinkSemiUnlocked) {
                     let scx = 30 + pinkSemiW / 2;
                     let scy = pinkSemiY + 4;
+                    let pinkActive = (selectedCarSkin === 4);
+
+                    ctx.save();
+                    ctx.translate(scx, scy + 36);
+                    ctx.rotate(Math.PI / 2);
+
                     ctx.fillStyle = "#ff1493";
-                    ctx.fillRect(scx - 12, scy, 24, 18);
+                    ctx.fillRect(-9, -36, 18, 36);
                     ctx.fillStyle = "#ffffff";
-                    ctx.fillRect(scx - 9, scy + 5, 18, 5);
+                    ctx.fillRect(-7, -30, 14, 10);
                     ctx.fillStyle = "#0066ff";
-                    ctx.fillRect(scx - 10, scy + 7, 20, 2);
-                    ctx.fillRect(scx - 10, scy + 13, 20, 2);
+                    ctx.fillRect(-8, -28, 2, 26);
+                    ctx.fillRect(6, -28, 2, 26);
                     ctx.fillStyle = "#aaaaaa";
-                    ctx.fillRect(scx - 10, scy + 18, 20, 30);
+                    ctx.fillRect(-9, 0, 18, 36);
                     ctx.fillStyle = "#777777";
-                    ctx.fillRect(scx - 10, scy + 28, 20, 3);
-                    ctx.fillRect(scx - 10, scy + 40, 20, 3);
-                    ctx.fillStyle = "#ff1493";
+                    ctx.fillRect(-9, 12, 18, 3);
+                    ctx.fillRect(-9, 28, 18, 3);
+
+                    ctx.restore();
+
+                    ctx.fillStyle = pinkActive ? "#00ff66" : "#ff1493";
                     ctx.font = "bold 9px monospace";
-                    ctx.fillText("BRIGHT PINK SEMI: UNLOCKED!", scx, pinkSemiY + 68);
+                    ctx.fillText(pinkActive ? "[ACTIVE]" : "BRIGHT PINK SEMI", scx, pinkSemiY + 75);
                 } else {
                     ctx.fillStyle = "#ff0055";
                     ctx.font = "bold 9px monospace";
