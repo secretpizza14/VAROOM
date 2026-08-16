@@ -7,7 +7,8 @@ Everything lives in one `<script>` block: no build step, no libraries, plain HTM
 Title screen name: **"Retro Drive - Levi .D inc & Fox.co"** (v1.24).
 
 ## How to run
-- `open index.html` (or just double-click it in Finder).
+- `open -n index.html` — always open in a **new browser window** (don't reuse an existing one).
+- When the user says "open", use `open -n index.html` unless they say otherwise.
 
 ## Controls
 - **LEFT / RIGHT arrows** — steer
