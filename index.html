@@ -712,7 +712,7 @@
             }
 
             sceneryTimer += dt;
-            if (sceneryTimer > 30) {
+            if (!pulledOver && sceneryTimer > 30) {
                 let side = Math.random() < 0.5 ? "left" : "right";
                 let x = side === "left" ? 25 + Math.random() * 65 : road.x + road.width + 25 + Math.random() * 55;
                 scenery.push({ x: x, y: -40, size: 24 });
@@ -790,7 +790,7 @@
                 let gate = (t === "retro" && score >= 500) || (t === "winter" && score >= 1000) || (t === "post2000" && score >= 2000);
                 if (!gate) continue;
                 let need = (t === "retro" && !song2Unlocked) || (t === "winter" && !winterUnlocked) || (t === "post2000" && !post2000Unlocked);
-                if (need) {
+                if (need && !pulledOver) {
                     vhsTimers[t] += dt;
                     if (vhsTimers[t] > 350) {
                         vhsTapes.push({ x: road.x + Math.random() * (road.width - 20), y: -14, type: t });
