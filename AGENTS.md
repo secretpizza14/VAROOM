@@ -11,11 +11,11 @@ Title screen name: **"Retro Drive - Levi .D inc & Fox.co"** (v1.24).
 - When the user says "open", use `open -n index.html` unless they say otherwise.
 
 ## Controls
-- **LEFT / RIGHT arrows** — steer
-- **DOWN arrow** — slow down (hold). Double-tap DOWN = full stop (toggles, persists until toggled again; brake lights show while stopped)
-- **Double-press P** — pause / open the Garage / resume (guarded against key-repeat)
-- **SPACE / ENTER** — start game; **SPACE** also restarts after game over
-- **Mouse click** — start game; in the Garage, pick paint job and game mode
+- Before the loading screen you pick a control scheme (persisted in `localStorage` `varoomControl`): **TOUCH** (8-bit hand icon) or **KEYBOARD** (16-bit keyboard icon). Arrow keys + ENTER or click/tap to select.
+- **Keyboard controls**: LEFT / RIGHT arrows — steer; DOWN arrow — slow down (hold); double-tap DOWN = full stop; double-press P — pause / Garage / resume; SPACE / ENTER — start; SPACE also restarts after game over.
+- **Touch controls**: on-screen buttons in the side gutters — ◄ / ► steer, BRAKE button (tap twice = full stop), top-right **II** button = pause / open Garage / resume. Tap the intro screen to start, tap anywhere after game over to restart. Garage works by tapping the boxes.
+- In **touch** mode the Garage only offers **Regular** and **Getaway** modes; **keyboard** mode offers all four (Traffic/Survival are not deleted, just hidden for touch).
+- Mouse click also drives the on-screen touch buttons, so the scheme can be tested on desktop.
 
 ## Game rules
 - Dodge the oncoming cars (obstacles). A collision ends the game (crash explosion + debris + crash sound).
