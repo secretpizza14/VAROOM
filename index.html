@@ -156,6 +156,7 @@
         let sceneryTimer = 0;
         let snowTimer = 0;
         let skidTimer = 0;
+        let trailerOffset = 0;
 
         const carColors = ["#00ffff", "#ffff33", "#ff00ff", "#00ff66", "#ff9900"];
         const semiCabColors = ["#cc0000", "#003366", "#20b2aa"]; 
@@ -364,6 +365,7 @@
             sceneryTimer = 0;
             snowTimer = 0;
             skidTimer = 0;
+            trailerOffset = 0;
             player.x = 220;
             player.vx = 0;
             paused = false;
@@ -551,6 +553,13 @@
                 }
             } else {
                 skidTimer = 0;
+            }
+
+            if (selectedCarSkin === 4) {
+                let targetTrailer = player.vx * 2.5;
+                trailerOffset += (targetTrailer - trailerOffset) * (1 - Math.pow(0.85, dt));
+            } else {
+                trailerOffset = 0;
             }
 
             if (selectedGameMode === "survival") {
@@ -976,18 +985,21 @@
                     let pw = 40, ph = 115;
                     let px = player.x + player.width / 2 - pw / 2;
                     let py = player.y + player.height - ph;
+                    let toe = Math.round(trailerOffset);
                     ctx.fillStyle = "#ff1493";
                     ctx.fillRect(px, py, pw, 30);
                     ctx.fillStyle = "#ffffff";
                     ctx.fillRect(px + 5, py + 8, pw - 10, 8);
                     ctx.fillStyle = "#0066ff";
-                    ctx.fillRect(px + 12, py + 2, 2, 26);
-                    ctx.fillRect(px + 26, py + 2, 2, 26);
+                    ctx.fillRect(px + 4, py + 2, 4, 6);
+                    ctx.fillRect(px + 4, py + 18, 4, 10);
+                    ctx.fillRect(px + pw - 8, py + 2, 4, 6);
+                    ctx.fillRect(px + pw - 8, py + 18, 4, 10);
                     ctx.fillStyle = "#aaaaaa";
-                    ctx.fillRect(px + 3, py + 30, pw - 6, ph - 30);
+                    ctx.fillRect(px + 3 + toe, py + 30, pw - 6, ph - 30);
                     ctx.fillStyle = "#777777";
-                    ctx.fillRect(px + 3, py + 50, pw - 6, 4);
-                    ctx.fillRect(px + 3, py + 85, pw - 6, 4);
+                    ctx.fillRect(px + 3 + toe, py + 50, pw - 6, 4);
+                    ctx.fillRect(px + 3 + toe, py + 85, pw - 6, 4);
                 } else {
                     ctx.fillStyle = currentSkin.outer;
                     ctx.fillRect(player.x, player.y, 3, player.height); 
@@ -1022,8 +1034,10 @@
 
                     if (obs.cabColor === "#ff1493") {
                         ctx.fillStyle = "#0066ff";
-                        ctx.fillRect(obs.x + 12, obs.y + 2, 2, 26);
-                        ctx.fillRect(obs.x + 26, obs.y + 2, 2, 26);
+                        ctx.fillRect(obs.x + 4, obs.y + 2, 4, 6);
+                        ctx.fillRect(obs.x + 4, obs.y + 18, 4, 10);
+                        ctx.fillRect(obs.x + obs.width - 8, obs.y + 2, 4, 6);
+                        ctx.fillRect(obs.x + obs.width - 8, obs.y + 18, 4, 10);
                     }
 
                     ctx.fillStyle = "#aaaaaa";
@@ -1379,31 +1393,29 @@
 
                 if (pinkSemiUnlocked) {
                     let scx = 30 + pinkSemiW / 2;
-                    let scy = pinkSemiY + 4;
                     let pinkActive = (selectedCarSkin === 4);
-
-                    ctx.save();
-                    ctx.translate(scx, scy + 36);
-                    ctx.rotate(Math.PI / 2);
+                    let pw = 28, ph = 55;
+                    let px = scx - pw / 2;
+                    let py = pinkSemiY + 4;
 
                     ctx.fillStyle = "#ff1493";
-                    ctx.fillRect(-14, -54, 28, 54);
+                    ctx.fillRect(px, py, pw, 15);
                     ctx.fillStyle = "#ffffff";
-                    ctx.fillRect(-12, -44, 24, 8);
+                    ctx.fillRect(px + 4, py + 5, pw - 8, 5);
                     ctx.fillStyle = "#0066ff";
-                    ctx.fillRect(-13, -42, 2, 40);
-                    ctx.fillRect(11, -42, 2, 40);
+                    ctx.fillRect(px + 3, py + 1, 4, 3);
+                    ctx.fillRect(px + 3, py + 11, 4, 3);
+                    ctx.fillRect(px + pw - 7, py + 1, 4, 3);
+                    ctx.fillRect(px + pw - 7, py + 11, 4, 3);
                     ctx.fillStyle = "#aaaaaa";
-                    ctx.fillRect(-14, 0, 28, 54);
+                    ctx.fillRect(px + 2, py + 15, pw - 4, ph - 15);
                     ctx.fillStyle = "#777777";
-                    ctx.fillRect(-14, 15, 28, 3);
-                    ctx.fillRect(-14, 38, 28, 3);
-
-                    ctx.restore();
+                    ctx.fillRect(px + 2, py + 26, pw - 4, 3);
+                    ctx.fillRect(px + 2, py + 42, pw - 4, 3);
 
                     ctx.fillStyle = pinkActive ? "#00ff66" : "#ff1493";
                     ctx.font = "bold 9px monospace";
-                    ctx.fillText(pinkActive ? "[ACTIVE]" : "BRIGHT PINK SEMI", scx, pinkSemiY + 75);
+                    ctx.fillText(pinkActive ? "[ACTIVE]" : "BRIGHT PINK SEMI", scx, pinkSemiY + 65);
                 } else {
                     ctx.fillStyle = "#ff0055";
                     ctx.font = "bold 9px monospace";
