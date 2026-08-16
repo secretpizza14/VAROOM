@@ -11,11 +11,8 @@ Title screen name: **"Retro Drive - Levi .D inc & Fox.co"** (v1.24).
 - When the user says "open", use `open -n index.html` unless they say otherwise.
 
 ## Controls
-- Before the loading screen you pick a control scheme (persisted in `localStorage` `varoomControl`): **TOUCH** (8-bit hand icon) or **KEYBOARD** (16-bit keyboard icon). Arrow keys + ENTER or click/tap to select. On non-touch devices the TOUCH box is greyed out and unselectable.
 - **Keyboard controls**: LEFT / RIGHT arrows — steer; DOWN arrow — slow down (hold); double-tap DOWN = full stop; double-press P — pause / Garage / resume; SPACE / ENTER — start; SPACE also restarts after game over.
-- **Touch controls**: on-screen buttons in the side gutters — ◄ / ► steer, BRAKE button (tap twice = full stop), top-right **II** button = pause / open Garage / resume. Tap the intro screen to start, tap anywhere after game over to restart. Garage works by tapping the boxes.
-- In **touch** mode the Garage only offers **Regular** and **Getaway** modes; **keyboard** mode offers all four (Traffic/Survival are not deleted, just hidden for touch).
-- Mouse click also drives the on-screen touch buttons, so the scheme can be tested on desktop.
+- Mouse click also works for start/restart and Garage selections.
 
 ## Game rules
 - Dodge the oncoming cars (obstacles). A collision ends the game (crash explosion + debris + crash sound).
@@ -45,7 +42,7 @@ All modes share the same seasons/physics below.
 ## Dev / secret things
 - **`ld` cheat**: type `l` then `d` while playing to get **+100 score**. Works even while paused (Garage). Not documented in-game.
 - **Red Challenger skin**: hidden unlock (see Paint jobs). Also not documented in-game.
-- **Bright Pink Semi**: hidden unlock — crash into regular (non-semi) cars 10 times total (persisted in `varoomCarHits`). After unlock, semi-trucks randomly spawn with a bright pink (#ff1493) cab. Not documented in-game.
+- **Bright Pink Semi**: hidden unlock — crash into regular (non-semi) cars 10 times total (persisted in `varoomCarHits`). After unlock, semi-trucks randomly spawn with a bright pink (#ff1493) cab + 2 blue stripes. Shown as a "????: LOCKED" bar below the game mode buttons in the Garage.
 - **Post-2K song fix**: songs play whenever selected + unlocked (no score gate), matching retro behavior.
 
 ## Technical conventions

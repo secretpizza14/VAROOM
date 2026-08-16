@@ -96,86 +96,8 @@
         let fullStop = false;
         let devKeyBuffer = "";
 
-        const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-        let controlScheme = localStorage.getItem("varoomControl") || (hasTouch ? "touch" : "keyboard");
-        if (controlScheme === "touch" && !hasTouch) controlScheme = "keyboard";
-        let setupDone = false;
-        let setupCursor = controlScheme === "touch" ? 0 : 1;
-        let touchZones = { left: 0, right: 0, brake: 0 };
-        let activeTouches = {};
-        let touchLastDownTime = 0;
-
-        const setupBoxes = [
-            { scheme: "touch", label: "TOUCH", x: 55, y: 210, w: 150, h: 190 },
-            { scheme: "keyboard", label: "KEYBOARD", x: 245, y: 210, w: 150, h: 190 }
-        ];
-
-        const touchBtns = {
-            left: { x: 12, y: 395, w: 96, h: 90 },
-            right: { x: 342, y: 395, w: 96, h: 90 },
-            brake: { x: 185, y: 455, w: 110, h: 42 },
-            pause: { x: 406, y: 8, w: 38, h: 26 }
-        };
-
         function inRect(px, py, r) {
             return px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h;
-        }
-
-        function confirmControl(scheme) {
-            controlScheme = scheme;
-            localStorage.setItem("varoomControl", controlScheme);
-            setupDone = true;
-            if (scheme === "touch" && selectedGameMode !== "regular" && selectedGameMode !== "getaway") {
-                selectedGameMode = "regular";
-                localStorage.setItem("varoomMode", selectedGameMode);
-            }
-        }
-
-        function zoneAt(px, py) {
-            if (inRect(px, py, touchBtns.left)) return "left";
-            if (inRect(px, py, touchBtns.right)) return "right";
-            if (inRect(px, py, touchBtns.brake)) return "brake";
-            return null;
-        }
-
-        function pressZone(zone) {
-            if (zone === "brake") {
-                let now = Date.now();
-                if (now - touchLastDownTime < 400) {
-                    fullStop = !fullStop;
-                    touchLastDownTime = 0;
-                } else {
-                    touchLastDownTime = now;
-                }
-            }
-            touchZones[zone]++;
-            syncTouchKeys();
-        }
-
-        function releaseZone(zone) {
-            touchZones[zone] = Math.max(0, touchZones[zone] - 1);
-            syncTouchKeys();
-        }
-
-        function syncTouchKeys() {
-            keys.ArrowLeft = touchZones.left > 0;
-            keys.ArrowRight = touchZones.right > 0;
-            keys.ArrowDown = touchZones.brake > 0;
-        }
-
-        function handlePointerPress(px, py) {
-            if (controlScheme !== "touch") return null;
-            if (inRect(px, py, touchBtns.pause)) {
-                if (gameStarted && !gameOver) {
-                    paused = !paused;
-                    return "pause";
-                }
-                return null;
-            }
-            if (paused || !gameStarted || gameOver) return null;
-            let zone = zoneAt(px, py);
-            if (zone) pressZone(zone);
-            return zone;
         }
 
         let trafficPhase = "break";
@@ -241,17 +163,6 @@
         window.addEventListener("keydown", (e) => {
             if (["Space", "Enter", "ArrowLeft", "ArrowRight", "ArrowDown", "ArrowUp"].includes(e.code)) {
                 e.preventDefault();
-            }
-
-            if (!setupDone) {
-                if (e.code === "ArrowLeft" || e.code === "ArrowRight" || e.code === "KeyA" || e.code === "KeyD") {
-                    if (!e.repeat) setupCursor = 1 - setupCursor;
-                } else if (e.code === "Enter" || e.code === "Space") {
-                    let chosen = setupCursor === 0 ? "touch" : "keyboard";
-                    if (chosen === "touch" && !hasTouch) chosen = "keyboard";
-                    confirmControl(chosen);
-                }
-                return;
             }
 
             if (keys.hasOwnProperty(e.code)) keys[e.code] = true;
@@ -330,15 +241,6 @@
             let mouseX = e.clientX - rect.left;
             let mouseY = e.clientY - rect.top;
 
-            if (!setupDone) {
-                if (inRect(mouseX, mouseY, setupBoxes[0]) && hasTouch) {
-                    confirmControl("touch");
-                } else if (inRect(mouseX, mouseY, setupBoxes[1])) {
-                    confirmControl("keyboard");
-                }
-                return;
-            }
-
             if (!gameStarted && readyToPlay) {
                 gameStarted = true;
                 engineSound.currentTime = 0;
@@ -370,28 +272,18 @@
 
                 // Mode selections (y: 300 to 335)
                 if (mouseY >= 300 && mouseY <= 335) {
-                    if (controlScheme === "touch") {
-                        if (mouseX >= 95 && mouseX <= 205) {
-                            selectedGameMode = "regular";
-                            localStorage.setItem("varoomMode", selectedGameMode);
-                        } else if (mouseX >= 245 && mouseX <= 355) {
-                            selectedGameMode = "getaway";
-                            localStorage.setItem("varoomMode", selectedGameMode);
-                        }
-                    } else {
-                        if (mouseX >= 42 && mouseX <= 130) {
-                            selectedGameMode = "regular";
-                            localStorage.setItem("varoomMode", selectedGameMode);
-                        } else if (mouseX >= 134 && mouseX <= 222) {
-                            selectedGameMode = "traffic";
-                            localStorage.setItem("varoomMode", selectedGameMode);
-                        } else if (mouseX >= 226 && mouseX <= 314) {
-                            selectedGameMode = "getaway";
-                            localStorage.setItem("varoomMode", selectedGameMode);
-                        } else if (mouseX >= 318 && mouseX <= 406) {
-                            selectedGameMode = "survival";
-                            localStorage.setItem("varoomMode", selectedGameMode);
-                        }
+                    if (mouseX >= 42 && mouseX <= 130) {
+                        selectedGameMode = "regular";
+                        localStorage.setItem("varoomMode", selectedGameMode);
+                    } else if (mouseX >= 134 && mouseX <= 222) {
+                        selectedGameMode = "traffic";
+                        localStorage.setItem("varoomMode", selectedGameMode);
+                    } else if (mouseX >= 226 && mouseX <= 314) {
+                        selectedGameMode = "getaway";
+                        localStorage.setItem("varoomMode", selectedGameMode);
+                    } else if (mouseX >= 318 && mouseX <= 406) {
+                        selectedGameMode = "survival";
+                        localStorage.setItem("varoomMode", selectedGameMode);
                     }
                 }
 
@@ -420,48 +312,6 @@
             if (gameOver) {
                 resetGame();
             }
-        });
-
-        canvas.addEventListener("touchstart", (e) => {
-            let rect = canvas.getBoundingClientRect();
-            for (let t of e.changedTouches) {
-                let tx = t.clientX - rect.left;
-                let ty = t.clientY - rect.top;
-                let consumed = handlePointerPress(tx, ty);
-                if (consumed) {
-                    e.preventDefault();
-                    activeTouches[t.identifier] = consumed;
-                }
-            }
-        }, { passive: false });
-
-        function touchEnd(e) {
-            for (let t of e.changedTouches) {
-                if (activeTouches.hasOwnProperty(t.identifier)) {
-                    let zone = activeTouches[t.identifier];
-                    delete activeTouches[t.identifier];
-                    if (zone === "pause") {
-                        // pause already toggled on press
-                    } else if (zone) {
-                        releaseZone(zone);
-                    }
-                }
-            }
-        }
-
-        canvas.addEventListener("touchend", touchEnd, { passive: false });
-        canvas.addEventListener("touchcancel", touchEnd, { passive: false });
-        canvas.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
-
-        canvas.addEventListener("mousedown", (e) => {
-            let rect = canvas.getBoundingClientRect();
-            handlePointerPress(e.clientX - rect.left, e.clientY - rect.top);
-        });
-        window.addEventListener("mouseup", () => {
-            touchZones.left = 0;
-            touchZones.right = 0;
-            touchZones.brake = 0;
-            syncTouchKeys();
         });
 
         function triggerCrashExplosion() {
@@ -520,11 +370,6 @@
             gasStations = [];
             nextStationScore = 500;
             toastTimer = 0;
-            activeTouches = {};
-            touchZones.left = 0;
-            touchZones.right = 0;
-            touchZones.brake = 0;
-            syncTouchKeys();
             toastText = "";
             asleepGameOver = false;
             keys.ArrowLeft = false;
@@ -583,176 +428,6 @@
             ctx.restore();
         }
 
-        function drawHandIcon(cx, cy) {
-            const sprite = [
-                "X.X..X..X..X",
-                "X.X..X..X..X",
-                "X.X..X..X..X",
-                "X.X..X..X..X",
-                "XXXXXXXXXXXX",
-                "X..........X",
-                "X..........X",
-                "X..........X",
-                "X..........X",
-                "X..........X",
-                "XXXXXXXXXXXX"
-            ];
-            let px = 4;
-            let w = sprite[0].length * px;
-            let h = sprite.length * px;
-            let ox = cx - w / 2;
-            let oy = cy - h / 2;
-            ctx.fillStyle = "#3a2512";
-            ctx.fillRect(ox - 2, oy - 2, w + 4, h + 4);
-            for (let r = 0; r < sprite.length; r++) {
-                for (let c = 0; c < sprite[r].length; c++) {
-                    if (sprite[r][c] === "X") {
-                        ctx.fillStyle = "#ffcc99";
-                        ctx.fillRect(ox + c * px, oy + r * px, px, px);
-                    }
-                }
-            }
-        }
-
-        function drawKeyboardIcon(cx, cy) {
-            let bw = 88, bh = 46;
-            let bx = cx - bw / 2, by = cy - bh / 2;
-
-            ctx.fillStyle = "#2b2b2b";
-            ctx.fillRect(bx - 3, by - 3, bw + 6, bh + 6);
-            ctx.fillStyle = "#111";
-            ctx.fillRect(bx, by, bw, bh);
-            ctx.fillStyle = "#222";
-            ctx.fillRect(bx, by + bh - 4, bw, 4);
-
-            let cols = 6, rows = 4;
-            let keyW = 10, keyH = 6, gap = 2;
-            let startX = bx + 4, startY = by + 5;
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    let kx = startX + c * (keyW + gap);
-                    let ky = startY + r * (keyH + gap);
-                    ctx.fillStyle = "#0d0d0d";
-                    ctx.fillRect(kx, ky + 1, keyW, keyH - 1);
-                    ctx.fillStyle = "#8a8a8a";
-                    ctx.fillRect(kx, ky, keyW, keyH - 1);
-                    ctx.fillStyle = "#d8d8d8";
-                    ctx.fillRect(kx, ky, keyW, 2);
-                    ctx.fillStyle = "#5a5a5a";
-                    ctx.fillRect(kx, ky + keyH - 3, keyW, 2);
-                }
-            }
-
-            let sy = startY + rows * (keyH + gap);
-            ctx.fillStyle = "#0d0d0d";
-            ctx.fillRect(startX + 5, sy + 1, 38, 7);
-            ctx.fillStyle = "#8a8a8a";
-            ctx.fillRect(startX + 5, sy, 38, 6);
-            ctx.fillStyle = "#d8d8d8";
-            ctx.fillRect(startX + 5, sy, 38, 2);
-        }
-
-        function drawButtonBox(b, kind) {
-            let color = kind === "brake" ? "#ff5500" : "#00ffff";
-            ctx.fillStyle = "rgba(10,10,20,0.55)";
-            ctx.fillRect(b.x, b.y, b.w, b.h);
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 2;
-            ctx.strokeRect(b.x, b.y, b.w, b.h);
-            ctx.fillStyle = color;
-            let cx = b.x + b.w / 2;
-            let cy = b.y + b.h / 2;
-            if (kind === "left") {
-                ctx.beginPath();
-                ctx.moveTo(cx + 16, cy - 16);
-                ctx.lineTo(cx - 12, cy);
-                ctx.lineTo(cx + 16, cy + 16);
-                ctx.closePath();
-                ctx.fill();
-            } else if (kind === "right") {
-                ctx.beginPath();
-                ctx.moveTo(cx - 16, cy - 16);
-                ctx.lineTo(cx + 12, cy);
-                ctx.lineTo(cx - 16, cy + 16);
-                ctx.closePath();
-                ctx.fill();
-            } else if (kind === "brake") {
-                ctx.fillRect(cx - 9, cy - 14, 6, 18);
-                ctx.fillRect(cx + 3, cy - 14, 6, 18);
-                ctx.beginPath();
-                ctx.moveTo(cx, cy + 16);
-                ctx.lineTo(cx - 12, cy + 2);
-                ctx.lineTo(cx + 12, cy + 2);
-                ctx.closePath();
-                ctx.fill();
-                ctx.font = "bold 9px monospace";
-                ctx.textAlign = "center";
-                ctx.fillText("BRAKE", cx, cy - 21);
-                ctx.textAlign = "left";
-            } else if (kind === "pause") {
-                ctx.fillRect(cx - 8, cy - 8, 5, 16);
-                ctx.fillRect(cx + 3, cy - 8, 5, 16);
-            }
-        }
-
-        function drawTouchUI() {
-            if (!gameStarted) return;
-            if (gameOver) return;
-            drawButtonBox(touchBtns.pause, "pause");
-            if (paused) return;
-            drawButtonBox(touchBtns.left, "left");
-            drawButtonBox(touchBtns.right, "right");
-            drawButtonBox(touchBtns.brake, "brake");
-        }
-
-        function drawSetupScreen() {
-            ctx.fillStyle = "rgba(0,0,0,0.95)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.textAlign = "center";
-
-            ctx.fillStyle = "#00ffff";
-            ctx.font = "bold 16px monospace";
-            ctx.fillText("HOW WILL YOU PLAY?", canvas.width / 2, 110);
-
-            ctx.fillStyle = "#fff";
-            ctx.font = "9px monospace";
-            ctx.fillText("8-BIT TOUCH OR 16-BIT KEYBOARD", canvas.width / 2, 132);
-
-            for (let i = 0; i < setupBoxes.length; i++) {
-                let b = setupBoxes[i];
-                let selected = setupCursor === i;
-                let disabled = b.scheme === "touch" && !hasTouch;
-                ctx.fillStyle = disabled ? "#0a0a0a" : (selected ? "#1a1a22" : "#141414");
-                ctx.fillRect(b.x, b.y, b.w, b.h);
-                ctx.strokeStyle = disabled ? "#222" : (selected ? "#00ff66" : "#555");
-                ctx.lineWidth = selected && !disabled ? 3 : 1;
-                ctx.strokeRect(b.x, b.y, b.w, b.h);
-
-                if (b.scheme === "touch") {
-                    drawHandIcon(b.x + b.w / 2, b.y + 78);
-                } else {
-                    drawKeyboardIcon(b.x + b.w / 2, b.y + 78);
-                }
-
-                ctx.fillStyle = disabled ? "#444" : (selected ? "#00ff66" : "#fff");
-                ctx.font = "bold 14px monospace";
-                ctx.fillText(b.label, b.x + b.w / 2, b.y + 138);
-
-                ctx.fillStyle = disabled ? "#333" : "#888";
-                ctx.font = "9px monospace";
-                if (disabled) {
-                    ctx.fillText("NO TOUCH", b.x + b.w / 2, b.y + 158);
-                } else {
-                    ctx.fillText(b.scheme === "touch" ? "TAP TO PLAY" : "PRESS TO PLAY", b.x + b.w / 2, b.y + 158);
-                }
-            }
-
-            ctx.fillStyle = "#777";
-            ctx.font = "9px monospace";
-            ctx.fillText("CLICK OR ARROWS + ENTER TO SELECT", canvas.width / 2, 445);
-            ctx.textAlign = "left";
-        }
-
         function playBg() {
             let track = bgMusic;
             if (selectedSong === "winter" && winterUnlocked) {
@@ -783,15 +458,13 @@
             let season = score >= 1000 && score < 2000 ? "winter" : "normal";
             if (!gameStarted) {
                 wheelAngle += 0.12 * dt;
-                if (setupDone) {
-                    if (introTimer < introDuration) {
-                        introTimer += dt;
-                    } else if (!readyToPlay) {
-                        loadProgress += 1.2 * dt;
-                        if (loadProgress >= 100) {
-                            loadProgress = 100;
-                            readyToPlay = true;
-                        }
+                if (introTimer < introDuration) {
+                    introTimer += dt;
+                } else if (!readyToPlay) {
+                    loadProgress += 1.2 * dt;
+                    if (loadProgress >= 100) {
+                        loadProgress = 100;
+                        readyToPlay = true;
                     }
                 }
                 return;
@@ -1518,8 +1191,8 @@
                     if (!readyToPlay) {
                         ctx.fillText("LOADING " + Math.floor(loadProgress) + "%", canvas.width / 2, canvas.height / 2 + 75);
                     } else {
-                        ctx.fillStyle = "#ffff33";
-                        ctx.fillText(controlScheme === "touch" ? "TAP TO START" : "CLICK OR PRESS SPACE TO START", canvas.width / 2, canvas.height / 2 + 75);
+                    ctx.fillStyle = "#ffff33";
+                    ctx.fillText("CLICK OR PRESS SPACE TO START", canvas.width / 2, canvas.height / 2 + 75);
                     }
                 }
                 ctx.textAlign = "left";
@@ -1603,17 +1276,12 @@
                 ctx.font = "11px monospace";
                 ctx.fillText("Select Game Mode:", canvas.width / 2, 285);
 
-                const modes = controlScheme === "touch"
-                    ? [
-                        { id: "regular", label: "Regular", x: 95, w: 110 },
-                        { id: "getaway", label: "Getaway", x: 245, w: 110 }
-                    ]
-                    : [
-                        { id: "regular", label: "Regular", x: 42, w: 88 },
-                        { id: "traffic", label: "Traffic", x: 134, w: 88 },
-                        { id: "getaway", label: "Getaway", x: 226, w: 88 },
-                        { id: "survival", label: "Survival", x: 318, w: 88 }
-                    ];
+                const modes = [
+                    { id: "regular", label: "Regular", x: 42, w: 88 },
+                    { id: "traffic", label: "Traffic", x: 134, w: 88 },
+                    { id: "getaway", label: "Getaway", x: 226, w: 88 },
+                    { id: "survival", label: "Survival", x: 318, w: 88 }
+                ];
 
                 for (let m of modes) {
                     let isModeSelected = (selectedGameMode === m.id);
@@ -1628,20 +1296,15 @@
                     ctx.fillText(m.label, m.x + m.w / 2, 322);
                 }
 
-                ctx.save();
-                let psx = canvas.width / 2 - 8, psy = 339, psw = 16, psh = 95;
+                let pinkSemiY = 347;
                 ctx.fillStyle = pinkSemiUnlocked ? "#1a1a22" : "#161616";
-                ctx.fillRect(psx, psy, psw, psh);
+                ctx.fillRect(30, pinkSemiY, 405, 17);
                 ctx.strokeStyle = pinkSemiUnlocked ? "#ff1493" : "#555";
                 ctx.lineWidth = 1;
-                ctx.strokeRect(psx, psy, psw, psh);
-                ctx.translate(psx + psw / 2, psy + psh / 2);
-                ctx.rotate(-Math.PI / 2);
+                ctx.strokeRect(30, pinkSemiY, 405, 17);
                 ctx.fillStyle = pinkSemiUnlocked ? "#ff1493" : "#ff0055";
                 ctx.font = "bold 8px monospace";
-                ctx.textAlign = "center";
-                ctx.fillText(pinkSemiUnlocked ? "PINK SEMI UNLOCKED!" : "????: LOCKED", 0, 3);
-                ctx.restore();
+                ctx.fillText(pinkSemiUnlocked ? "BRIGHT PINK SEMI: UNLOCKED!" : "????: LOCKED", canvas.width / 2, pinkSemiY + 12);
 
                 ctx.strokeStyle = "#00ff66";
                 ctx.lineWidth = 2;
@@ -1685,7 +1348,7 @@
 
                 ctx.fillStyle = "#fff";
                 ctx.font = "11px monospace";
-                ctx.fillText(controlScheme === "touch" ? "TAP THE II BUTTON TO RESUME" : "Double-press P to Resume", canvas.width / 2, 368);
+                ctx.fillText("Double-press P to Resume", canvas.width / 2, 368);
                 ctx.textAlign = "left";
             }
 
@@ -1706,17 +1369,9 @@
                 } else {
                     ctx.fillStyle = "#fff";
                     ctx.font = "14px monospace";
-                    ctx.fillText(controlScheme === "touch" ? "TAP TO RESTART" : "PRESS SPACE TO RESTART", canvas.width / 2, canvas.height / 2 + 15);
+                    ctx.fillText("PRESS SPACE TO RESTART", canvas.width / 2, canvas.height / 2 + 15);
                 }
                 ctx.textAlign = "left";
-            }
-
-            if (controlScheme === "touch") {
-                drawTouchUI();
-            }
-
-            if (!setupDone) {
-                drawSetupScreen();
             }
 
             if (shake > 0) {
