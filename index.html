@@ -307,6 +307,11 @@
                         localStorage.setItem("varoomVolume", musicVolume);
                     }
                 }
+
+                if (mouseY >= 378 && mouseY <= 458 && mouseX >= 30 && mouseX <= 365) {
+                    toastTimer = 90;
+                    toastText = pinkSemiUnlocked ? "PINK SEMI ACTIVE!" : "CRASH INTO 10 CARS TO UNLOCK!";
+                }
             }
 
             if (gameOver) {
@@ -1347,9 +1352,30 @@
                 ctx.strokeStyle = pinkSemiUnlocked ? "#ff1493" : "#555";
                 ctx.lineWidth = 1;
                 ctx.strokeRect(30, pinkSemiY, pinkSemiW, 80);
-                ctx.fillStyle = pinkSemiUnlocked ? "#ff1493" : "#ff0055";
-                ctx.font = "bold 9px monospace";
-                ctx.fillText(pinkSemiUnlocked ? "BRIGHT PINK SEMI: UNLOCKED!" : "????: LOCKED", 30 + pinkSemiW / 2, pinkSemiY + 48);
+
+                if (pinkSemiUnlocked) {
+                    let scx = 30 + pinkSemiW / 2;
+                    let scy = pinkSemiY + 4;
+                    ctx.fillStyle = "#ff1493";
+                    ctx.fillRect(scx - 12, scy, 24, 18);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(scx - 9, scy + 5, 18, 5);
+                    ctx.fillStyle = "#0066ff";
+                    ctx.fillRect(scx - 10, scy + 7, 20, 2);
+                    ctx.fillRect(scx - 10, scy + 13, 20, 2);
+                    ctx.fillStyle = "#aaaaaa";
+                    ctx.fillRect(scx - 10, scy + 18, 20, 30);
+                    ctx.fillStyle = "#777777";
+                    ctx.fillRect(scx - 10, scy + 28, 20, 3);
+                    ctx.fillRect(scx - 10, scy + 40, 20, 3);
+                    ctx.fillStyle = "#ff1493";
+                    ctx.font = "bold 9px monospace";
+                    ctx.fillText("BRIGHT PINK SEMI: UNLOCKED!", scx, pinkSemiY + 68);
+                } else {
+                    ctx.fillStyle = "#ff0055";
+                    ctx.font = "bold 9px monospace";
+                    ctx.fillText("????: LOCKED", 30 + pinkSemiW / 2, pinkSemiY + 48);
+                }
 
                 ctx.textAlign = "left";
             }
