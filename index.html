@@ -96,7 +96,9 @@
         let fullStop = false;
         let devKeyBuffer = "";
 
-        let controlScheme = localStorage.getItem("varoomControl") || ('ontouchstart' in window ? "touch" : "keyboard");
+        const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        let controlScheme = localStorage.getItem("varoomControl") || (hasTouch ? "touch" : "keyboard");
+        if (controlScheme === "touch" && !hasTouch) controlScheme = "keyboard";
         let setupDone = false;
         let setupCursor = controlScheme === "touch" ? 0 : 1;
         let touchZones = { left: 0, right: 0, brake: 0 };
@@ -202,6 +204,8 @@
 
         let selectedCarSkin = parseInt(localStorage.getItem("varoomSkin")) || 0;
         let semiHits = parseInt(localStorage.getItem("varoomSemiHits")) || 0;
+        let carHits = parseInt(localStorage.getItem("varoomCarHits")) || 0;
+        let pinkSemiUnlocked = carHits >= 10;
         const carSkins = [
             { outer: "#8b0000", inner: "#000000", name: "Classic Red/Black" },
             { outer: "#000000", inner: "#00ff66", name: "Green & Black" },
@@ -243,7 +247,9 @@
                 if (e.code === "ArrowLeft" || e.code === "ArrowRight" || e.code === "KeyA" || e.code === "KeyD") {
                     if (!e.repeat) setupCursor = 1 - setupCursor;
                 } else if (e.code === "Enter" || e.code === "Space") {
-                    confirmControl(setupCursor === 0 ? "touch" : "keyboard");
+                    let chosen = setupCursor === 0 ? "touch" : "keyboard";
+                    if (chosen === "touch" && !hasTouch) chosen = "keyboard";
+                    confirmControl(chosen);
                 }
                 return;
             }
@@ -325,7 +331,7 @@
             let mouseY = e.clientY - rect.top;
 
             if (!setupDone) {
-                if (inRect(mouseX, mouseY, setupBoxes[0])) {
+                if (inRect(mouseX, mouseY, setupBoxes[0]) && hasTouch) {
                     confirmControl("touch");
                 } else if (inRect(mouseX, mouseY, setupBoxes[1])) {
                     confirmControl("keyboard");
@@ -715,10 +721,11 @@
             for (let i = 0; i < setupBoxes.length; i++) {
                 let b = setupBoxes[i];
                 let selected = setupCursor === i;
-                ctx.fillStyle = selected ? "#1a1a22" : "#141414";
+                let disabled = b.scheme === "touch" && !hasTouch;
+                ctx.fillStyle = disabled ? "#0a0a0a" : (selected ? "#1a1a22" : "#141414");
                 ctx.fillRect(b.x, b.y, b.w, b.h);
-                ctx.strokeStyle = selected ? "#00ff66" : "#555";
-                ctx.lineWidth = selected ? 3 : 1;
+                ctx.strokeStyle = disabled ? "#222" : (selected ? "#00ff66" : "#555");
+                ctx.lineWidth = selected && !disabled ? 3 : 1;
                 ctx.strokeRect(b.x, b.y, b.w, b.h);
 
                 if (b.scheme === "touch") {
@@ -727,13 +734,17 @@
                     drawKeyboardIcon(b.x + b.w / 2, b.y + 78);
                 }
 
-                ctx.fillStyle = selected ? "#00ff66" : "#fff";
+                ctx.fillStyle = disabled ? "#444" : (selected ? "#00ff66" : "#fff");
                 ctx.font = "bold 14px monospace";
                 ctx.fillText(b.label, b.x + b.w / 2, b.y + 138);
 
-                ctx.fillStyle = "#888";
+                ctx.fillStyle = disabled ? "#333" : "#888";
                 ctx.font = "9px monospace";
-                ctx.fillText(b.scheme === "touch" ? "TAP TO PLAY" : "PRESS TO PLAY", b.x + b.w / 2, b.y + 158);
+                if (disabled) {
+                    ctx.fillText("NO TOUCH", b.x + b.w / 2, b.y + 158);
+                } else {
+                    ctx.fillText(b.scheme === "touch" ? "TAP TO PLAY" : "PRESS TO PLAY", b.x + b.w / 2, b.y + 158);
+                }
             }
 
             ctx.fillStyle = "#777";
@@ -744,9 +755,9 @@
 
         function playBg() {
             let track = bgMusic;
-            if (selectedSong === "winter" && winterUnlocked && score >= 1000 && score < 2000) {
+            if (selectedSong === "winter" && winterUnlocked) {
                 track = winterMusic;
-            } else if (selectedSong === "post2000" && post2000Unlocked && score >= 2000) {
+            } else if (selectedSong === "post2000" && post2000Unlocked) {
                 track = post2000Music;
             } else if (selectedSong === "retro" && song2Unlocked) {
                 track = song2Music;
@@ -986,7 +997,8 @@
                     };
 
                     if (isSemi) {
-                        obstacle.cabColor = semiCabColors[Math.floor(Math.random() * semiCabColors.length)];
+                        let cabPool = pinkSemiUnlocked ? ["#cc0000", "#003366", "#20b2aa", "#ff1493"] : ["#cc0000", "#003366", "#20b2aa"];
+                        obstacle.cabColor = cabPool[Math.floor(Math.random() * cabPool.length)];
                     } else {
                         obstacle.color = carColors[Math.floor(Math.random() * carColors.length)];
                     }
@@ -1100,6 +1112,14 @@
                     if (obstacles[i].isSemi) {
                         semiHits++;
                         localStorage.setItem("varoomSemiHits", semiHits);
+                    } else {
+                        carHits++;
+                        localStorage.setItem("varoomCarHits", carHits);
+                        if (carHits >= 10 && !pinkSemiUnlocked) {
+                            pinkSemiUnlocked = true;
+                            unlockMsg = "BRIGHT PINK SEMI UNLOCKED!";
+                            unlockFlash = 90;
+                        }
                     }
                     gameOver = true;
                     triggerCrashExplosion();
@@ -1294,9 +1314,15 @@
                 if (obs.isSemi) {
                     ctx.fillStyle = obs.cabColor;
                     ctx.fillRect(obs.x, obs.y, obs.width, 30);
-                    
+
                     ctx.fillStyle = "#ffffff";
                     ctx.fillRect(obs.x + 5, obs.y + 8, obs.width - 10, 8);
+
+                    if (obs.cabColor === "#ff1493") {
+                        ctx.fillStyle = "#0066ff";
+                        ctx.fillRect(obs.x + 2, obs.y + 10, obs.width - 4, 2);
+                        ctx.fillRect(obs.x + 2, obs.y + 18, obs.width - 4, 2);
+                    }
 
                     ctx.fillStyle = "#aaaaaa";
                     ctx.fillRect(obs.x + 3, obs.y + 30, obs.width - 6, obs.height - 30);
@@ -1601,6 +1627,21 @@
                     ctx.font = "bold 11px monospace";
                     ctx.fillText(m.label, m.x + m.w / 2, 322);
                 }
+
+                ctx.save();
+                let psx = canvas.width / 2 - 8, psy = 339, psw = 16, psh = 95;
+                ctx.fillStyle = pinkSemiUnlocked ? "#1a1a22" : "#161616";
+                ctx.fillRect(psx, psy, psw, psh);
+                ctx.strokeStyle = pinkSemiUnlocked ? "#ff1493" : "#555";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(psx, psy, psw, psh);
+                ctx.translate(psx + psw / 2, psy + psh / 2);
+                ctx.rotate(-Math.PI / 2);
+                ctx.fillStyle = pinkSemiUnlocked ? "#ff1493" : "#ff0055";
+                ctx.font = "bold 8px monospace";
+                ctx.textAlign = "center";
+                ctx.fillText(pinkSemiUnlocked ? "PINK SEMI UNLOCKED!" : "????: LOCKED", 0, 3);
+                ctx.restore();
 
                 ctx.strokeStyle = "#00ff66";
                 ctx.lineWidth = 2;
