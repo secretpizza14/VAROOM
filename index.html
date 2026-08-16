@@ -556,8 +556,8 @@
             }
 
             if (selectedCarSkin === 4) {
-                let targetTrailer = player.vx * 2.5;
-                trailerOffset += (targetTrailer - trailerOffset) * (1 - Math.pow(0.85, dt));
+                let targetTrailer = player.vx * 5;
+                trailerOffset += (targetTrailer - trailerOffset) * (1 - Math.pow(0.82, dt));
             } else {
                 trailerOffset = 0;
             }
@@ -1394,24 +1394,27 @@
                 if (pinkSemiUnlocked) {
                     let scx = 30 + pinkSemiW / 2;
                     let pinkActive = (selectedCarSkin === 4);
-                    let pw = 28, ph = 55;
-                    let px = scx - pw / 2;
-                    let py = pinkSemiY + 4;
+
+                    ctx.save();
+                    ctx.translate(scx, pinkSemiY + 40);
+                    ctx.rotate(Math.PI / 2);
 
                     ctx.fillStyle = "#ff1493";
-                    ctx.fillRect(px, py, pw, 15);
+                    ctx.fillRect(-9, -36, 18, 36);
                     ctx.fillStyle = "#ffffff";
-                    ctx.fillRect(px + 4, py + 5, pw - 8, 5);
+                    ctx.fillRect(-7, -30, 14, 10);
                     ctx.fillStyle = "#0066ff";
-                    ctx.fillRect(px + 3, py + 1, 4, 3);
-                    ctx.fillRect(px + 3, py + 11, 4, 3);
-                    ctx.fillRect(px + pw - 7, py + 1, 4, 3);
-                    ctx.fillRect(px + pw - 7, py + 11, 4, 3);
+                    ctx.fillRect(-8, -34, 4, 4);
+                    ctx.fillRect(-8, -20, 4, 4);
+                    ctx.fillRect(4, -34, 4, 4);
+                    ctx.fillRect(4, -20, 4, 4);
                     ctx.fillStyle = "#aaaaaa";
-                    ctx.fillRect(px + 2, py + 15, pw - 4, ph - 15);
+                    ctx.fillRect(-9, 0, 18, 36);
                     ctx.fillStyle = "#777777";
-                    ctx.fillRect(px + 2, py + 26, pw - 4, 3);
-                    ctx.fillRect(px + 2, py + 42, pw - 4, 3);
+                    ctx.fillRect(-9, 12, 18, 3);
+                    ctx.fillRect(-9, 28, 18, 3);
+
+                    ctx.restore();
 
                     ctx.fillStyle = pinkActive ? "#00ff66" : "#ff1493";
                     ctx.font = "bold 9px monospace";
