@@ -218,6 +218,15 @@
             }
         });
 
+        function autoPause() {
+            if (gameStarted && !gameOver) paused = true;
+        }
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) autoPause();
+        });
+        window.addEventListener("blur", autoPause);
+
         window.addEventListener("click", (e) => {
             if (!gameStarted && readyToPlay) {
                 gameStarted = true;
@@ -555,6 +564,7 @@
                             sleeping = false;
                             pulledOver = false;
                             tiredness = 0;
+                            spawnTimer = 0;
                             toastTimer = 90;
                             toastText = "WAKE UP!";
                         }
@@ -564,6 +574,7 @@
                             brokenDown = false;
                             pulledOver = false;
                             gas = 25;
+                            spawnTimer = 0;
                             toastTimer = 90;
                             toastText = "AUTO-FIXED! RESERVE GAS";
                         }
@@ -602,7 +613,7 @@
                 dynamicSpawnRate = 50; 
             }
 
-            if (spawnTimer > dynamicSpawnRate) {
+            if (!pulledOver && spawnTimer > dynamicSpawnRate) {
                 let isSemi = (selectedGameMode === "traffic" && trafficPhase === "jam") ? (Math.random() < 0.35) : (Math.random() < 0.10);
                 let obsWidth = isSemi ? 40 : 30;
                 let obsHeight = isSemi ? 115 : 50;
