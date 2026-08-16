@@ -973,18 +973,21 @@
                 if (currentSkin.challenger) {
                     drawChallengerCar(player.x, player.y, player.width, player.height);
                 } else if (selectedCarSkin === 4) {
-                    ctx.fillStyle = "#aaaaaa";
-                    ctx.fillRect(player.x, player.y + 13, player.width, player.height - 13);
-                    ctx.fillStyle = "#777777";
-                    ctx.fillRect(player.x, player.y + 25, player.width, 3);
-                    ctx.fillRect(player.x, player.y + 38, player.width, 3);
+                    let pw = 40, ph = 115;
+                    let px = player.x + player.width / 2 - pw / 2;
+                    let py = player.y + player.height - ph;
                     ctx.fillStyle = "#ff1493";
-                    ctx.fillRect(player.x, player.y, player.width, 13);
+                    ctx.fillRect(px, py, pw, 30);
                     ctx.fillStyle = "#ffffff";
-                    ctx.fillRect(player.x + 5, player.y + 4, player.width - 10, 4);
+                    ctx.fillRect(px + 5, py + 8, pw - 10, 8);
                     ctx.fillStyle = "#0066ff";
-                    ctx.fillRect(player.x + 6, player.y + 3, 2, 8);
-                    ctx.fillRect(player.x + player.width - 8, player.y + 3, 2, 8);
+                    ctx.fillRect(px + 12, py + 2, 2, 26);
+                    ctx.fillRect(px + 26, py + 2, 2, 26);
+                    ctx.fillStyle = "#aaaaaa";
+                    ctx.fillRect(px + 3, py + 30, pw - 6, ph - 30);
+                    ctx.fillStyle = "#777777";
+                    ctx.fillRect(px + 3, py + 50, pw - 6, 4);
+                    ctx.fillRect(px + 3, py + 85, pw - 6, 4);
                 } else {
                     ctx.fillStyle = currentSkin.outer;
                     ctx.fillRect(player.x, player.y, 3, player.height); 
