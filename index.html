@@ -605,7 +605,7 @@
                 }
             }
 
-            spawnTimer += dt;
+            if (!fullStop) spawnTimer += dt;
             let dynamicSpawnRate = 90;
             if (selectedGameMode === "traffic" && trafficPhase === "jam") {
                 dynamicSpawnRate = 18;
@@ -613,7 +613,7 @@
                 dynamicSpawnRate = 50; 
             }
 
-            if (!pulledOver && spawnTimer > dynamicSpawnRate) {
+            if (!pulledOver && !fullStop && spawnTimer > dynamicSpawnRate) {
                 let isSemi = (selectedGameMode === "traffic" && trafficPhase === "jam") ? (Math.random() < 0.35) : (Math.random() < 0.10);
                 let obsWidth = isSemi ? 40 : 30;
                 let obsHeight = isSemi ? 115 : 50;
@@ -711,8 +711,8 @@
                 }
             }
 
-            sceneryTimer += dt;
-            if (!pulledOver && sceneryTimer > 30) {
+            if (!fullStop) sceneryTimer += dt;
+            if (!pulledOver && !fullStop && sceneryTimer > 30) {
                 let side = Math.random() < 0.5 ? "left" : "right";
                 let x = side === "left" ? 25 + Math.random() * 65 : road.x + road.width + 25 + Math.random() * 55;
                 scenery.push({ x: x, y: -40, size: 24 });
@@ -790,7 +790,7 @@
                 let gate = (t === "retro" && score >= 500) || (t === "winter" && score >= 1000) || (t === "post2000" && score >= 2000);
                 if (!gate) continue;
                 let need = (t === "retro" && !song2Unlocked) || (t === "winter" && !winterUnlocked) || (t === "post2000" && !post2000Unlocked);
-                if (need && !pulledOver) {
+                if (need && !pulledOver && !fullStop) {
                     vhsTimers[t] += dt;
                     if (vhsTimers[t] > 350) {
                         vhsTapes.push({ x: road.x + Math.random() * (road.width - 20), y: -14, type: t });
