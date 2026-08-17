@@ -132,8 +132,7 @@
             { outer: "#8b0000", inner: "#000000", name: "Classic Red/Black" },
             { outer: "#000000", inner: "#00ff66", name: "Green & Black" },
             { outer: "#800080", inner: "#00ffff", name: "Purple & Blue" },
-            { outer: "#ff3333", inner: "#cc0000", name: "Red Challenger", challenger: true },
-            { outer: "#ff1493", inner: "#aaaaaa", name: "Pink Semi", pinkSemi: true }
+            { outer: "#ff3333", inner: "#cc0000", name: "Red Challenger", challenger: true }
         ];
 
         const road = { x: 120, width: 240, color: "#555" };
@@ -156,7 +155,6 @@
         let sceneryTimer = 0;
         let snowTimer = 0;
         let skidTimer = 0;
-        let trailerOffset = 0;
 
         const carColors = ["#00ffff", "#ffff33", "#ff00ff", "#00ff66", "#ff9900"];
         const semiCabColors = ["#cc0000", "#003366", "#20b2aa"]; 
@@ -310,19 +308,6 @@
                     }
                 }
 
-                if (mouseY >= 378 && mouseY <= 458 && mouseX >= 30 && mouseX <= 365) {
-                    if (pinkSemiUnlocked) {
-                        selectedCarSkin = 4;
-                        localStorage.setItem("varoomSkin", selectedCarSkin);
-                        toastTimer = 90;
-                        toastText = "PINK SEMI ACTIVE!";
-                    } else {
-                        toastTimer = 90;
-                        toastText = "CRASH INTO 10 CARS TO UNLOCK!";
-                    }
-                }
-            }
-
             if (gameOver) {
                 resetGame();
             }
@@ -365,7 +350,6 @@
             sceneryTimer = 0;
             snowTimer = 0;
             skidTimer = 0;
-            trailerOffset = 0;
             player.x = 220;
             player.vx = 0;
             paused = false;
@@ -555,12 +539,6 @@
                 skidTimer = 0;
             }
 
-            if (selectedCarSkin === 4) {
-                let targetTrailer = player.vx * 5;
-                trailerOffset += (targetTrailer - trailerOffset) * (1 - Math.pow(0.82, dt));
-            } else {
-                trailerOffset = 0;
-            }
 
             if (selectedGameMode === "survival") {
                 if (!pulledOver && !brokenDown) {
@@ -981,29 +959,6 @@
             if (!gameOver || debris.length > 10) {
                 if (currentSkin.challenger) {
                     drawChallengerCar(player.x, player.y, player.width, player.height);
-                } else if (selectedCarSkin === 4) {
-                    let pw = 40, ph = 115;
-                    let px = player.x + player.width / 2 - pw / 2;
-                    let py = player.y + player.height - ph;
-                    let toe = Math.round(trailerOffset);
-                    ctx.fillStyle = "#ff1493";
-                    ctx.fillRect(px, py, pw, 30);
-                    ctx.fillStyle = "#ffffff";
-                    ctx.fillRect(px + 5, py + 8, pw - 10, 8);
-                    ctx.fillStyle = "#0066ff";
-                    ctx.fillRect(px + 4, py + 2, 4, 6);
-                    ctx.fillRect(px + 4, py + 18, 4, 10);
-                    ctx.fillRect(px + pw - 8, py + 2, 4, 6);
-                    ctx.fillRect(px + pw - 8, py + 18, 4, 10);
-                    ctx.save();
-                    ctx.translate(px + pw / 2, py + 30);
-                    ctx.rotate(10 * Math.PI / 180);
-                    ctx.fillStyle = "#aaaaaa";
-                    ctx.fillRect(-pw / 2 + 3 + toe, 0, pw - 6, ph - 30);
-                    ctx.fillStyle = "#777777";
-                    ctx.fillRect(-pw / 2 + 3 + toe, 20, pw - 6, 4);
-                    ctx.fillRect(-pw / 2 + 3 + toe, 55, pw - 6, 4);
-                    ctx.restore();
                 } else {
                     ctx.fillStyle = currentSkin.outer;
                     ctx.fillRect(player.x, player.y, 3, player.height); 
@@ -1386,52 +1341,6 @@
                 ctx.fillStyle = "#fff";
                 ctx.font = "11px monospace";
                 ctx.fillText("Double-press P to Resume", canvas.width / 2, 368);
-
-                let pinkSemiY = 378;
-                let pinkSemiW = 335;
-                ctx.fillStyle = pinkSemiUnlocked ? "#1a1a22" : "#161616";
-                ctx.fillRect(30, pinkSemiY, pinkSemiW, 80);
-                ctx.strokeStyle = pinkSemiUnlocked ? "#ff1493" : "#555";
-                ctx.lineWidth = 1;
-                ctx.strokeRect(30, pinkSemiY, pinkSemiW, 80);
-
-                if (pinkSemiUnlocked) {
-                    let scx = 30 + pinkSemiW / 2;
-                    let pinkActive = (selectedCarSkin === 4);
-
-                    let pw2 = 28, cabH = 20, trailH = 40;
-                    let totalH = cabH + trailH;
-                    let scpx = scx - pw2 / 2;
-                    let scpy = pinkSemiY + (80 - totalH) / 2;
-
-                    ctx.fillStyle = "#ff1493";
-                    ctx.fillRect(scpx, scpy, pw2, cabH);
-                    ctx.fillStyle = "#ffffff";
-                    ctx.fillRect(scpx + 4, scpy + 6, pw2 - 8, 8);
-                    ctx.fillStyle = "#0066ff";
-                    ctx.fillRect(scpx + 2, scpy + 2, 4, 4);
-                    ctx.fillRect(scpx + 2, scpy + 14, 4, 6);
-                    ctx.fillRect(scpx + pw2 - 6, scpy + 2, 4, 4);
-                    ctx.fillRect(scpx + pw2 - 6, scpy + 14, 4, 6);
-
-                    ctx.save();
-                    ctx.translate(scpx + pw2 / 2, scpy + cabH);
-                    ctx.rotate(10 * Math.PI / 180);
-                    ctx.fillStyle = "#aaaaaa";
-                    ctx.fillRect(-pw2 / 2 + 3, 0, pw2 - 6, trailH);
-                    ctx.fillStyle = "#777777";
-                    ctx.fillRect(-pw2 / 2 + 3, 12, pw2 - 6, 3);
-                    ctx.fillRect(-pw2 / 2 + 3, 28, pw2 - 6, 3);
-                    ctx.restore();
-
-                    ctx.fillStyle = pinkActive ? "#00ff66" : "#ff1493";
-                    ctx.font = "bold 9px monospace";
-                    ctx.fillText(pinkActive ? "[ACTIVE]" : "BRIGHT PINK SEMI", scx, pinkSemiY + 65);
-                } else {
-                    ctx.fillStyle = "#ff0055";
-                    ctx.font = "bold 9px monospace";
-                    ctx.fillText("????: LOCKED", 30 + pinkSemiW / 2, pinkSemiY + 48);
-                }
 
                 ctx.textAlign = "left";
             }
