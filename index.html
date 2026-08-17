@@ -995,11 +995,15 @@
                     ctx.fillRect(px + 4, py + 18, 4, 10);
                     ctx.fillRect(px + pw - 8, py + 2, 4, 6);
                     ctx.fillRect(px + pw - 8, py + 18, 4, 10);
+                    ctx.save();
+                    ctx.translate(px + pw / 2, py + 30);
+                    ctx.rotate(10 * Math.PI / 180);
                     ctx.fillStyle = "#aaaaaa";
-                    ctx.fillRect(px + 3 + toe, py + 30, pw - 6, ph - 30);
+                    ctx.fillRect(-pw / 2 + 3 + toe, 0, pw - 6, ph - 30);
                     ctx.fillStyle = "#777777";
-                    ctx.fillRect(px + 3 + toe, py + 50, pw - 6, 4);
-                    ctx.fillRect(px + 3 + toe, py + 85, pw - 6, 4);
+                    ctx.fillRect(-pw / 2 + 3 + toe, 20, pw - 6, 4);
+                    ctx.fillRect(-pw / 2 + 3 + toe, 55, pw - 6, 4);
+                    ctx.restore();
                 } else {
                     ctx.fillStyle = currentSkin.outer;
                     ctx.fillRect(player.x, player.y, 3, player.height); 
@@ -1395,25 +1399,29 @@
                     let scx = 30 + pinkSemiW / 2;
                     let pinkActive = (selectedCarSkin === 4);
 
-                    ctx.save();
-                    ctx.translate(scx, pinkSemiY + 40);
-                    ctx.rotate(Math.PI / 2);
+                    let pw2 = 28, cabH = 20, trailH = 40;
+                    let totalH = cabH + trailH;
+                    let scpx = scx - pw2 / 2;
+                    let scpy = pinkSemiY + (80 - totalH) / 2;
 
                     ctx.fillStyle = "#ff1493";
-                    ctx.fillRect(-9, -36, 18, 36);
+                    ctx.fillRect(scpx, scpy, pw2, cabH);
                     ctx.fillStyle = "#ffffff";
-                    ctx.fillRect(-7, -30, 14, 10);
+                    ctx.fillRect(scpx + 4, scpy + 6, pw2 - 8, 8);
                     ctx.fillStyle = "#0066ff";
-                    ctx.fillRect(-8, -34, 4, 4);
-                    ctx.fillRect(-8, -20, 4, 4);
-                    ctx.fillRect(4, -34, 4, 4);
-                    ctx.fillRect(4, -20, 4, 4);
-                    ctx.fillStyle = "#aaaaaa";
-                    ctx.fillRect(-9, 0, 18, 36);
-                    ctx.fillStyle = "#777777";
-                    ctx.fillRect(-9, 12, 18, 3);
-                    ctx.fillRect(-9, 28, 18, 3);
+                    ctx.fillRect(scpx + 2, scpy + 2, 4, 4);
+                    ctx.fillRect(scpx + 2, scpy + 14, 4, 6);
+                    ctx.fillRect(scpx + pw2 - 6, scpy + 2, 4, 4);
+                    ctx.fillRect(scpx + pw2 - 6, scpy + 14, 4, 6);
 
+                    ctx.save();
+                    ctx.translate(scpx + pw2 / 2, scpy + cabH);
+                    ctx.rotate(10 * Math.PI / 180);
+                    ctx.fillStyle = "#aaaaaa";
+                    ctx.fillRect(-pw2 / 2 + 3, 0, pw2 - 6, trailH);
+                    ctx.fillStyle = "#777777";
+                    ctx.fillRect(-pw2 / 2 + 3, 12, pw2 - 6, 3);
+                    ctx.fillRect(-pw2 / 2 + 3, 28, pw2 - 6, 3);
                     ctx.restore();
 
                     ctx.fillStyle = pinkActive ? "#00ff66" : "#ff1493";
