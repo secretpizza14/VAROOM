@@ -124,7 +124,7 @@
         let toastText = "";
         let asleepGameOver = false;
 
-        let selectedCarSkin = parseInt(localStorage.getItem("varoomSkin")) || 0;
+        let selectedCarSkin = Math.min(parseInt(localStorage.getItem("varoomSkin")) || 0, 3);
         let semiHits = parseInt(localStorage.getItem("varoomSemiHits")) || 0;
         let carHits = parseInt(localStorage.getItem("varoomCarHits")) || 0;
         let pinkSemiUnlocked = carHits >= 10;
@@ -307,6 +307,8 @@
                         localStorage.setItem("varoomVolume", musicVolume);
                     }
                 }
+
+            }
 
             if (gameOver) {
                 resetGame();
