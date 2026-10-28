@@ -4,10 +4,17 @@
     <meta charset="UTF-8">
     <title>Retro Drive - Levi .D inc & Fox.co (v1.24)</title>
     <style>
+        @font-face {
+            font-family: "Yoster Island";
+            src: url("data:font/ttf;base64,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FSMRMzUzFSMVIzUjESM1M6qqqqpVqlX/VVVVAqiqVf6sVVVVVQFUVQABAFUAAAKoAf4AEQAAEzMRMzUzETMVMxUjNSMVIzUjVapVVapVqlX/VQH+/ldVAP//qlVVVQABAFUAAAKoAlMAFwAAATMVIxUjFSMVIzUjNSM1IzUzFTMVMzUzAf6qVVVVVVVVVapVVVUCU6qqqlVVVaqqqlWqAAABAFUAAAKoAf4AFwAAEzMVIxUzNTMVMxEzESMVIzUjFSM1IxEzqqpVVVVVqlWqVapVVQH+Vf+qqgFU/ldVVVVVAVQAAAEAVQAAAqgCUwAjAAABMxUjFSMVIxUzFTMVIzUjFSM1MzUzNSM1IzUzFTMVMzUzNTMCU1VVVVVVqv+qqlVVVVWqVVVVVQJTqlVVVVVVVVVVVapVVVVVVVUAAAEAAP9WAqgCUwAhAAATMxUzFTM1MzUzFSMVIxUjFSMVIxUjNTM1MzUzNSM1IzUjVapVVVWqVVVVVaqqqlVVVVVVAlNVqlWq/6pVVVVVqlVVVVWqAAEAVf+rAqgB/gAbAAATIRUzFSMVIxUjFTMVMxUjNSE1MzUzNTM1MzUjqgFUqlVVVVWq//6sVVVVVf8B/lVVVVVVVVVVVVVVVVUABABV/1YE+wL9ACMAQQBTAFcAAAEzFTM1IRUzFTMVMxUzFSMVIxUjFSE1IzUjNSM1IxEzNTM1MzEVIxUjETMVMxUzFSE1MzUjNTMRIzUjNSM1IxUjNRUhFTMVIxUjNTM1MzUhFSM1MxMzFSMBVKpVAP+qVVVVVVWq/leqVVVVVVVVVVVVVaoBqapVqlVVqv9VAVRVqqpVqv6sVVVVqqoC/VVVVVVVVf+qVVVVVVVVAVRVVVVV/qxVVVVVVVUA/1VVVVVVqlWqVVVVVVVV/qxVAAMAVf9WBPsC/QAlAEEAVQAAATMVMzUhFTMVMxUzFTMVIxUjFSMVITUjNSM1IzUzNSM1MzUzNTMxFSMVIxUzFSMVMxUzFSE1MzUzESM1IzUjFSM1FzMVMxUzFTMVIxUhESM1MzUzNTMBVKpVAP+qVVVVVVWq/gKqVVVVVVVVVVVVVVVVqgH+qlWqqv9VVapVVVWq/qyqVVVVAv1VVVVVVVX/qlVVVVVVqlWqVVVVVapVqlVVVaoA/6pVVVVVVVVVVf8A/1VVVQAABwCq/1YE+wL9ABMAIwArAC8AMwA3ADsAAAEhFTMVMxUzFTMRIREzNTM1MzUzMRUjFSMVIxUhESM1IzUjNQchFSMVIzUjFzMVIwUVMzUzFTM1MxUhNQJTAP+qVVVV+69VVVWqqlVVA6dVVar/AP9VVVVVVVX+V1VVVaoB/gL9VVVVqv4CAf6qVVVVVar/AP+qVVVVqlVVqlWqVVVVVVVVAAEAVQBVAqgBVAATAAATIRUzFTM1MxUjFSM1IzUjFSM1M6oA/1VVVVX/VVVVVQFUVVVVVVVVVVVVAAACAFUAAAKoA1IAFQAdAAABMxUzFTMVMxEjESMVIxEzNTM1MzUjHQEjFSE1IzUBVFVVVVWq/6pVVapVVQD/VQNSVaqq/lcA/6oBVKpVVapVqqpVAAADAFUAAAKoA1IAFQAZACEAAAEzFTMVMxUzESMRIxUjETM1MzUjNTMxFTM1BxUjFSE1IzUA/6pVVVWq/6pVVVVVqlVVAP9VA1JVqqr+VwD/qgFUqlVVVVWqVaqqVQAABABVAAACqANSAAMABwAXAB8AABMzFSMlMxUjByEVMxUzESMRIxUjETM1OwEVIxUhNSM1qqqqAP+qqqoA/1VVqv+qVVVVVQD/VQNSVVVVVVVV/gIA/6oBqVVVqqpVAAEAVf9WAqgCqAAlAAABIRUzFSM1IxUjETMVMzUzNTMVIxUjFSMVIzUzNSM1IzUjETM1MwD/AVRVqqpVVVVVqlVVVf+qVVVVVVUCqFVVVVX+rFVVVapVVVVVVVVVAVRVAAIAVQAAAqgDUgAHABUAAAEzFTMVIzUjByEVIRUhFSMVIRUhETMA/6pVqlVVAan+rAD//wGp/a1VA1JVVVWqVapVqlUB/gACAFUAAAKoA1IABwAXAAABMxUjFSM1MwchFSMVIxUhFSMVIRUhETMBVKpVqlWqAan/VQD//wGp/a1VA1JVVVWqVVVVVapVAf4AAAIAVQAAAqgDUgALABsAAAEhFTMVIzUjFSM1MwchFSMVIxUhFSMVIRUhETMA/wD/VapVqlVVAan/VQD//wGp/a1VA1JVVVVVVapVVVVVqlUB/gACAFUAAAH+A1IACwAbAAATIRUzFSM1IxUjNTMVIRUjFSMVMxUhNTM1MxEjqgD/VapVqlUBVFVVVf6sVVVVA1JVVVVVVapV/6pVVaoA/wADAFUAAAH+A1IAAwAHABcAABMzFSMlMxUjByEVIxUjFTMVITUzETM1I1WqqgD/qqqqAVRVVVX+rFVVVQNSVVVVqlWq/1VVAP+qAAMAVQAAAqgDUgALAB0AKQAAASEVMxUjNSMVIzUzFSEVMxUzESMVITUjNSMRMzU7ARUjFTMVMzUzESM1AP8A/1WqVapVAP9VVVX+rFVVVVVVVVVVVVUDUlVVVVVVqlVV/qxVVVUA/1VV/1VVAP9VAAAEAFUAAAKoA1IAAwAHABkAJQAAEzMVIyUzFSMHIRUzFTMRIxUhNSM1IxEzNTsBFSMRMxUzNTMRIzWqqqoA/6qqqgD/VVVV/qxVVVVVVVVVVVVVA1JVVVVVVVX+V1VVVQFUVVX+rFVVAVRVAAACAFUAAAKoA1IABwAbAAABMxUzFSM1IwczFSMRMzUzETMRIxUjFSE1IxEzAP+qVapVVapVqlWqVVX+rFVVA1JVVVWqqv6sVQGp/ldVVVUBVAAAAgBVAAACqANSAAcAGwAAATMVIxUjNTMHMxUjETM1MxEzESMVIxUhNSMRMwFUqlWqVaqqVapVqlVV/qxVVQNSVVVVqqr+rFUBqf5XVVVVAVQAAAIAVQAAAqgDUgALAB8AAAEhFTMVIzUjFSM1MwczFSMRMzUzETMRIxUjFSE1IxEzAVQA/1WqVapVqqpVqlWqVVX+rFVVA1JVVVVVVaqq/qxVAan+V1VVVQFUAAMAVQAAAqgDUgADAAcAGwAAEzMVIyUzFSMHMxUjETM1MxEzESMVIxUhNSMRM6qqqgD/qqr/qlWqVapVVf6sVVUDUlVVVVX//qxVAf7+AlVVVQGpAAMAVf+rAqgCqAAVABkAHwAAASEVMxUjFTMVIxUjNSMVIxUjNTMRMzcVMzUHFTMVMxEA/wFUVVVVVf9VVVVVVVWqqlVVAqhVqlX/VVVVVaoBqVWqqv+qVQD/AAMAVQAAAqgC/QAHABsAIQAAATMVMxUjNSMVIRUzETMVIzUjFSM1IzUzNSE1Ix0BMzUzNQD/qlWqVQD/VVWqVf9VVQD/qlVVAv1VVVWqVf6sVVVVVapVVaqqVVUAAwBVAAACqAL9AAsAHwAlAAABIRUzFSM1IxUjNTMVIRUzETMVIzUjFSM1IzUzNSE1Ix0BMzUzNQD/AP9VqlWqVQD/VVWqVf9VVQD/qlVVAv1VVVVVVapV/qxVVVVVqlVVqqpVVQAABABVAAACqAL9AAMABwAbACEAABMzFSMlMxUjByEVMxEzFSM1IxUjNSM1MzUhNSMdATM1MzWqqqoA/6qqqgD/VVWqVf9VVQD/qlVVAv1VVVWqVf6sVVVVVapVVaqqVVUAAQBV/1YCqAJTACEAABMhFTMVIzUjFSMVITUzFSMVIxUzFSMVIzUzNSM1IzUjETOqAalVqqpVAP+qVapVVf+qVVVVVQJTVVVVVf9VVVVVVVVVVVVVAVQAAAMAVQAAAlMC/QAHABkAHQAAATMVMxUjNSMHIRUzFSEVMzUzFSMVITUjETsBFTM1AP+qVapVVQFUVf6sqqpV/qxVVVWqAv1VVVWqVaqqVVVVVQFUVVUAAwBVAAACUwL9AAcAGQAdAAABMxUjFSM1MwchFTMVIRUzNTMVIxUhNSMROwEVMzUBVKpVqlWqAVRV/qyqqlX+rFVVVaoC/VVVVapVqqpVVVVVAVRVVQADAFUAAAJTAv0ACwAdACEAAAEhFTMVIzUjFSM1MwchFTMVIRUzNTMVIxUhNSMROwEVMzUA/wD/VapVqlVVAVRV/qyqqlX+rFVVVaoC/VVVVVVVqlWqqlVVVVUBVFVVAAACAFUAAAGpAv0ACwAXAAATMxUzFSM1IxUjNTMVMxUjFTMVIzUjNTOqqlVVqlVVqlVVqlVVAv1VVVVVVar/qlVVqgADAFUAVQGpAv0AAwAHABEAABMzFSM3MxUjBzMRMxUzFSM1I1VVVapVVaqqVVX/VQL9VVVVVf6sVVVVAAADAFUAAAKoAv0ACwAbACMAAAEhFTMVIzUjFSM1MxUhFTMVIxUjFSE1IxEzNTsBFSMVMzUzEQD/AP9VqlWqVQFUVVVV/qxVVVVVVapVAv1VVVVVVapV/1VVVQD/VVX/VQD/AAQAVQAAAqgC/QADAAcAFwAfAAATMxUjJTMVIwchFTMVIxUjFSE1IxEzNTsBFSMVMzUzEaqqqgD/qqqqAVRVVVX+rFVVVVVVqlUC/VVVVapV/1VVVQD/VVX/VQD/AAACAFUAAAKoAv0ABwAXAAABMxUzFSM1IwczETMRMxUzFSM1IxUhNSMA/6pVqlWqqqqqVVVV/qxVAv1VVVWq/lcBVP+qVVVVAAACAFUAAAKoAv0ACwAbAAABIRUzFSM1IxUjNTMHMxEzETMVMxUjNSMVITUjAP8A/1WqVapVqqqqqlVVVf6sVQL9VVVVVVWq/lcBVP+qVVVVAAMAVQAAAqgC/QADAAcAFwAAEzMVIyUzFSMFMxEzETMVMxUjNSMVITUjqqqqAP+qqv6sqqqqVVVV/qxVAv1VVVWq/lcBVP+qVVVVAAABAKoB/gFUA1IACQAAEzMVIxUzFSM1I6qqVVVVVQNSqlVVVQABAKoB/gFUA1IACQAAEzMVIxUjNTM1I6qqVVVVVQNS/1VVVQACAKoBqQJTAv0ABwAPAAATMxUzFSM1IwEzFTMVIzUjqlVVVVUA/1VVVVUC/aqqVQD/qqpVAAACAFUBqQH+Av0ABwAPAAATMxUjFSM1MyUzFSMVIzUzqlVVVVUA/1VVVVUC/f9Vqqr/VaoAAQD/AKoBqQFUAAMAAAEzFSMA/6qqAVSqAAADAKoAqgJTAVQAAwAHAAsAABMzFSM3MxUjNzMVI6pVVapVVapVVQFUqqqqqqoAAAAAAAAAAQAAAAwAAAAcAAAAAgACAAEAewABAHwAfAACAAQAAAACAAAAAQAAAAoAHgAsAAFERkxUAAgABAAAAAD//wABAAAAAWxpZ2EACAAAAAEAAAABAAQABAAAAAEACAABABQAAQAIAAEABAB8AAMADQANAAEAAQANAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB9AAAAAQACAAMABAAFAAYACQAKAA0ADgAPABAAEQATABQAFQAWABcAGAAZABoAGwAcAB0AHgAfACAAIQAiACQAJQAmACcAKAApACoAKwAsAC0ALgAvADAAMQAyADMANAA1ADYANwA4ADkAOgA7ADwAPQA+AEAAQwBEAEUARgBHAEgASQBKAEsATABNAE4ATwBQAFEAUgBTAFQAVQBWAFcAWABZAFoAWwBcAF0AXgBfAGAAYQCtAMcAYgBkAMsAZQDIAM0AzgDRAGcA1gDUANUAaACJAGoAawBsAG8AcQBwAHIAdgB3AHsAfAB/AIAAgQC2ALcAtAC1AIcAqw==") format("truetype");
+            font-weight: normal;
+            font-style: normal;
+            font-display: block;
+        }
         body {
             background-color: #111;
             color: #fff;
-            font-family: monospace;
+            font-family: "Yoster Island", monospace;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -934,7 +941,7 @@
                 ctx.lineWidth = 2;
                 ctx.strokeRect(st.x, st.y, 34, 30);
                 ctx.fillStyle = "#33ccff";
-                ctx.font = "bold 8px monospace";
+                ctx.font = "bold 8px 'Yoster Island', monospace";
                 ctx.fillText("GAS", st.x + 17 - 10, st.y + 18);
                 ctx.fillStyle = "#ffff33";
                 ctx.fillRect(st.x + 5, st.y + 22, 24, 4);
@@ -1036,17 +1043,17 @@
 
             if (sleeping) {
                 ctx.fillStyle = "#aaeeff";
-                ctx.font = "bold 16px monospace";
+                ctx.font = "bold 16px 'Yoster Island', monospace";
                 ctx.fillText("Z", player.x + player.width / 2 + 8, player.y - 6);
-                ctx.font = "bold 11px monospace";
+                ctx.font = "bold 11px 'Yoster Island', monospace";
                 ctx.fillText("z", player.x + player.width / 2 + 20, player.y - 14);
-                ctx.font = "bold 8px monospace";
+                ctx.font = "bold 8px 'Yoster Island', monospace";
                 ctx.fillText("z", player.x + player.width / 2 + 27, player.y - 20);
             }
 
             if (brokenDown) {
                 ctx.fillStyle = "#ffcc00";
-                ctx.font = "bold 10px monospace";
+                ctx.font = "bold 10px 'Yoster Island', monospace";
                 ctx.fillText("BROKEN DOWN!", player.x + player.width / 2 - 28, player.y - 8);
             }
 
@@ -1068,17 +1075,17 @@
 
             if (isNight) {
                 ctx.fillStyle = "rgba(255, 255, 0, 0.8)";
-                ctx.font = "bold 11px monospace";
+                ctx.font = "bold 11px 'Yoster Island', monospace";
                 ctx.fillText("NIGHT MODE", 22, 180);
             } else {
                 ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-                ctx.font = "bold 11px monospace";
+                ctx.font = "bold 11px 'Yoster Island', monospace";
                 ctx.fillText("DAY MODE", 29, 180);
             }
 
             if (isWinter) {
                 ctx.fillStyle = "#ffffff";
-                ctx.font = "bold 11px monospace";
+                ctx.font = "bold 11px 'Yoster Island', monospace";
                 ctx.fillText("WINTER MODE", 22, 196);
             }
 
@@ -1086,59 +1093,59 @@
                 let secondsRemaining = Math.ceil(((trafficPhase === "jam" ? jamDuration : breakDuration) - trafficPhaseTimer) / 60);
                 if (trafficPhase === "jam") {
                     ctx.fillStyle = "#ff0055";
-                    ctx.font = "bold 12px monospace";
+                    ctx.font = "bold 12px 'Yoster Island', monospace";
                     ctx.fillText("TRAFFIC JAM!", 15, 210);
                     ctx.fillStyle = "#ffff33";
                     ctx.fillText("(" + secondsRemaining + "s left)", 15, 228);
                 } else {
                     ctx.fillStyle = "#00ff66";
-                    ctx.font = "bold 12px monospace";
+                    ctx.font = "bold 12px 'Yoster Island', monospace";
                     ctx.fillText("ROAD CLEAR", 15, 210);
                     ctx.fillStyle = "#ffffff";
                     ctx.fillText("(" + secondsRemaining + "s left)", 15, 228);
                 }
             } else if (selectedGameMode === "getaway") {
                 ctx.fillStyle = "#ff3333";
-                ctx.font = "bold 12px monospace";
+                ctx.font = "bold 12px 'Yoster Island', monospace";
                 ctx.fillText("GETAWAY MODE", 15, 210);
                 ctx.fillStyle = "#ffffff";
                 ctx.fillText("EVADE THE COPS!", 15, 228);
             } else if (selectedGameMode === "survival") {
                 ctx.fillStyle = "#33ccff";
-                ctx.font = "bold 12px monospace";
+                ctx.font = "bold 12px 'Yoster Island', monospace";
                 ctx.fillText("SURVIVAL MODE", 15, 210);
                 ctx.fillStyle = "#ffffff";
-                ctx.font = "10px monospace";
+                ctx.font = "10px 'Yoster Island', monospace";
                 ctx.fillText("MANAGE GAS + TIREDNESS", 15, 228);
                 ctx.fillText("Z = PULL OVER", 15, 244);
             }
 
             if (unlockFlash > 0) {
                 ctx.fillStyle = "#ffff33";
-                ctx.font = "bold 14px monospace";
+                ctx.font = "bold 14px 'Yoster Island', monospace";
                 ctx.textAlign = "center";
                 ctx.fillText(unlockMsg, canvas.width / 2, 95);
-                ctx.font = "bold 10px monospace";
+                ctx.font = "bold 10px 'Yoster Island', monospace";
                 ctx.fillText("NEW SONG IN GARAGE", canvas.width / 2, 112);
                 ctx.textAlign = "left";
             }
 
             ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 12px monospace";
+            ctx.font = "bold 12px 'Yoster Island', monospace";
             ctx.fillText("SCORE:", 15, 270);
             ctx.fillStyle = "#00ff66";
-            ctx.font = "bold 15px monospace";
+            ctx.font = "bold 15px 'Yoster Island', monospace";
             ctx.fillText(score, 15, 290);
 
             ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 12px monospace";
+            ctx.font = "bold 12px 'Yoster Island', monospace";
             ctx.fillText("HIGH SCORE:", 15, 340);
             ctx.fillStyle = "#ffff33";
-            ctx.font = "bold 15px monospace";
+            ctx.font = "bold 15px 'Yoster Island', monospace";
             ctx.fillText(highScore, 15, 360);
 
             if (selectedGameMode === "survival") {
-                ctx.font = "bold 10px monospace";
+                ctx.font = "bold 10px 'Yoster Island', monospace";
                 ctx.fillStyle = "#33ccff";
                 ctx.fillText("GAS", 15, 392);
                 ctx.fillStyle = "#333333";
@@ -1167,7 +1174,7 @@
                 ctx.fillStyle = "rgba(0,0,0,0.7)";
                 ctx.fillRect(15, 452, 220, 20);
                 ctx.fillStyle = "#ffff33";
-                ctx.font = "bold 10px monospace";
+                ctx.font = "bold 10px 'Yoster Island', monospace";
                 ctx.fillText(toastText, 20, 466);
             }
 
@@ -1176,7 +1183,7 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 ctx.fillStyle = "#00ffff";
-                ctx.font = "bold 18px monospace";
+                ctx.font = "bold 18px 'Yoster Island', monospace";
                 ctx.textAlign = "center";
                 ctx.fillText("Get ready to go VAROOM!", canvas.width / 2, canvas.height / 2 - 60);
 
@@ -1191,7 +1198,7 @@
                     ctx.fillRect(canvas.width / 2 - 98, canvas.height / 2 + 37, (196 * (loadProgress / 100)), 12);
 
                     ctx.fillStyle = "#fff";
-                    ctx.font = "bold 12px monospace";
+                    ctx.font = "bold 12px 'Yoster Island', monospace";
                     if (!readyToPlay) {
                         ctx.fillText("LOADING " + Math.floor(loadProgress) + "%", canvas.width / 2, canvas.height / 2 + 75);
                     } else {
@@ -1207,12 +1214,12 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 ctx.fillStyle = "#00ffff";
-                ctx.font = "bold 20px monospace";
+                ctx.font = "bold 20px 'Yoster Island', monospace";
                 ctx.textAlign = "center";
                 ctx.fillText("PAUSED - GARAGE", canvas.width / 2, 35);
 
                 ctx.fillStyle = "#fff";
-                ctx.font = "11px monospace";
+                ctx.font = "11px 'Yoster Island', monospace";
                 ctx.fillText("Pick Paint Job:", canvas.width / 2, 55);
 
                 let boxX = 30;
@@ -1248,11 +1255,11 @@
                         }
 
                         ctx.fillStyle = "#00ff66";
-                        ctx.font = "bold 10px monospace";
+                        ctx.font = "bold 10px 'Yoster Island', monospace";
                         ctx.fillText(isSelected ? "[ACTIVE]" : "SELECT", boxX + boxWidth / 2, boxY + 95);
 
                         ctx.fillStyle = "#fff";
-                        ctx.font = "9px monospace";
+                        ctx.font = "9px 'Yoster Island', monospace";
                         ctx.fillText(skin.name.split(" ")[0], boxX + boxWidth / 2, boxY + 130);
                         ctx.fillText(skin.name.split(" ")[1] || "", boxX + boxWidth / 2, boxY + 143);
                     } else {
@@ -1260,11 +1267,11 @@
                         ctx.fillRect(previewCarX, previewCarY, 30, 45);
                         
                         ctx.fillStyle = "#ff0055";
-                        ctx.font = "bold 10px monospace";
+                        ctx.font = "bold 10px 'Yoster Island', monospace";
                         ctx.fillText("LOCKED", boxX + boxWidth / 2, boxY + 95);
 
                         ctx.fillStyle = "#888";
-                        ctx.font = "9px monospace";
+                        ctx.font = "9px 'Yoster Island', monospace";
                         if (i === 2) {
                             ctx.fillText("Score 1000", boxX + boxWidth / 2, boxY + 130);
                             ctx.fillText("to unlock", boxX + boxWidth / 2, boxY + 143);
@@ -1277,7 +1284,7 @@
                 }
 
                 ctx.fillStyle = "#fff";
-                ctx.font = "11px monospace";
+                ctx.font = "11px 'Yoster Island', monospace";
                 ctx.fillText("Select Game Mode:", canvas.width / 2, 285);
 
                 const modes = [
@@ -1296,7 +1303,7 @@
                     ctx.strokeRect(m.x, 300, m.w, 35);
 
                     ctx.fillStyle = isModeSelected ? "#00ff66" : "#fff";
-                    ctx.font = "bold 11px monospace";
+                    ctx.font = "bold 11px 'Yoster Island', monospace";
                     ctx.fillText(m.label, m.x + m.w / 2, 322);
                 }
 
@@ -1304,7 +1311,7 @@
                 ctx.lineWidth = 2;
                 ctx.strokeRect(373, 345, 72, 150);
                 ctx.fillStyle = "#fff";
-                ctx.font = "bold 9px monospace";
+                ctx.font = "bold 9px 'Yoster Island', monospace";
                 ctx.fillText("MUSIC", 409, 357);
 
                 const songButtons = [
@@ -1322,12 +1329,12 @@
                     ctx.lineWidth = selected ? 2 : 1;
                     ctx.strokeRect(375, b.y, 68, 22);
                     ctx.fillStyle = !b.unlocked ? "#555" : (selected ? "#00ff66" : "#fff");
-                    ctx.font = "bold 8px monospace";
+                    ctx.font = "bold 8px 'Yoster Island', monospace";
                     ctx.fillText(!b.unlocked ? "LOCKED" : b.label, 409, b.y + 15);
                 }
 
                 ctx.fillStyle = "#fff";
-                ctx.font = "bold 8px monospace";
+                ctx.font = "bold 8px 'Yoster Island', monospace";
                 ctx.fillText("VOL", 409, 466);
                 ctx.fillStyle = "#444";
                 ctx.fillRect(377, 470, 64, 8);
@@ -1337,11 +1344,11 @@
                 ctx.lineWidth = 1;
                 ctx.strokeRect(377, 470, 64, 8);
                 ctx.fillStyle = "#fff";
-                ctx.font = "7px monospace";
+                ctx.font = "7px 'Yoster Island', monospace";
                 ctx.fillText(musicVolume + "%", 409, 490);
 
                 ctx.fillStyle = "#fff";
-                ctx.font = "11px monospace";
+                ctx.font = "11px 'Yoster Island', monospace";
                 ctx.fillText("Double-press P to Resume", canvas.width / 2, 368);
 
                 ctx.textAlign = "left";
@@ -1351,19 +1358,19 @@
                 ctx.fillStyle = "rgba(0,0,0,0.85)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "#ff0055";
-                ctx.font = "bold 24px monospace";
+                ctx.font = "bold 24px 'Yoster Island', monospace";
                 ctx.textAlign = "center";
                 ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 15);
                 if (asleepGameOver) {
                     ctx.fillStyle = "#ffcc00";
-                    ctx.font = "bold 13px monospace";
+                    ctx.font = "bold 13px 'Yoster Island', monospace";
                     ctx.fillText("YOU FELL ASLEEP AT THE WHEEL!", canvas.width / 2, canvas.height / 2 + 12);
                     ctx.fillStyle = "#fff";
-                    ctx.font = "11px monospace";
+                    ctx.font = "11px 'Yoster Island', monospace";
                     ctx.fillText("PRESS Z NEXT TIME TO SLEEP SAFELY", canvas.width / 2, canvas.height / 2 + 32);
                 } else {
                     ctx.fillStyle = "#fff";
-                    ctx.font = "14px monospace";
+                    ctx.font = "14px 'Yoster Island', monospace";
                     ctx.fillText("PRESS SPACE TO RESTART", canvas.width / 2, canvas.height / 2 + 15);
                 }
                 ctx.textAlign = "left";
